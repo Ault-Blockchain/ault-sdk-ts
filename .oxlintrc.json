@@ -1,0 +1,11 @@
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2020": true
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-undef": "error"
+  }
+}

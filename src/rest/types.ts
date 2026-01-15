@@ -1,0 +1,440 @@
+import { z } from "zod";
+
+export const LicenseStatusSchema = z.enum([
+  "LICENSE_STATUS_UNSPECIFIED",
+  "LICENSE_STATUS_ACTIVE",
+  "LICENSE_STATUS_REVOKED",
+  "LICENSE_STATUS_BURNED",
+]);
+export type LicenseStatus = z.infer<typeof LicenseStatusSchema>;
+
+export const LicenseSchema = z
+  .object({
+    id: z.string(),
+    owner: z.string(),
+    status: LicenseStatusSchema,
+    class_name: z.string(),
+    uri: z.string(),
+    created_at: z.string(),
+    revoked_at: z.string().nullable().optional(),
+    burned_at: z.string().nullable().optional(),
+  })
+  .strict();
+export type License = z.infer<typeof LicenseSchema>;
+
+export const LicenseModuleParamsSchema = z
+  .object({
+    class_name: z.string(),
+    class_symbol: z.string(),
+    base_token_uri: z.string(),
+    minting_paused: z.boolean(),
+    supply_cap: z.string(),
+    allow_metadata_update: z.boolean(),
+    admin_can_revoke: z.boolean(),
+    admin_can_burn: z.boolean(),
+    max_batch_mint_size: z.number(),
+    transfer_unlock_days: z.number(),
+    enable_transfers: z.boolean(),
+    minter_allowed_msgs: z.array(z.string()).default([]),
+    kyc_approver_allowed_msgs: z.array(z.string()).default([]),
+    free_max_gas_limit: z.string(),
+    max_voting_power_per_address: z.string(),
+  })
+  .strict();
+export type LicenseModuleParams = z.infer<typeof LicenseModuleParamsSchema>;
+
+export const MiningDelegationSchema = z
+  .object({
+    license_id: z.string(),
+    operator: z.string(),
+  })
+  .strict();
+export type MiningDelegation = z.infer<typeof MiningDelegationSchema>;
+
+export const OperatorSchema = z
+  .object({
+    operator: z.string(),
+    commission_rate: z.number(),
+    commission_recipient: z.string(),
+    last_update_epoch: z.string().optional(),
+  })
+  .strict();
+export type Operator = z.infer<typeof OperatorSchema>;
+
+export const LicenseMinerInfoSchema = z
+  .object({
+    vrf_pubkey: z.string(),
+    last_submit_epoch: z.string(),
+    eligible_now: z.boolean(),
+    quarantined_local: z.boolean(),
+    quarantined_source: z.boolean(),
+    all_time_credits: z.string(),
+    all_time_payouts: z.string(),
+  })
+  .strict();
+export type LicenseMinerInfo = z.infer<typeof LicenseMinerInfoSchema>;
+
+export const OwnerKeyInfoSchema = z
+  .object({
+    vrf_pubkey: z.string().optional(),
+    nonce: z.string().optional(),
+    last_rotation_time: z.string().optional(),
+    registration_epoch: z.string().optional(),
+    valid_from_epoch: z.string().optional(),
+    registration_chain_id: z.string().optional(),
+  })
+  .strict();
+export type OwnerKeyInfo = z.infer<typeof OwnerKeyInfoSchema>;
+
+export const EmissionInfoSchema = z
+  .object({
+    current_year: z.number(),
+    annual_emission: z.string(),
+    monthly_emission: z.string(),
+    daily_emission: z.string(),
+    cumulative_emitted: z.string(),
+    epochs_until_next_year: z.string(),
+    current_epoch: z.string(),
+    epochs_per_year: z.string(),
+  })
+  .strict();
+export type EmissionInfo = z.infer<typeof EmissionInfoSchema>;
+
+export const YearEmissionSchema = z
+  .object({
+    year: z.number(),
+    annual_emission: z.string(),
+    monthly_emission: z.string(),
+    daily_emission: z.string(),
+  })
+  .strict();
+export type YearEmission = z.infer<typeof YearEmissionSchema>;
+
+export const LicensePayoutsSchema = z
+  .object({
+    total_payout: z.string(),
+    total_credits: z.string(),
+  })
+  .strict();
+export type LicensePayouts = z.infer<typeof LicensePayoutsSchema>;
+
+export const MinerModuleParamsSchema = z
+  .object({
+    epoch_length_seconds: z.string(),
+    target_winners_per_epoch: z.number(),
+    max_winners_per_epoch: z.number(),
+    submission_window_seconds: z.number(),
+    controller_alpha_q16: z.number(),
+    controller_window: z.number(),
+    threshold_min: z.string(),
+    threshold_max: z.string(),
+    beacon_window_epochs: z.number(),
+    key_rotation_cooldown_seconds: z.string(),
+    vrf_verify_gas: z.number(),
+    min_key_age_epochs: z.number(),
+    initial_emission_per_epoch: z.string(),
+    emission_decay_rate: z.string(),
+    max_emission_years: z.number(),
+    max_payouts_per_block: z.number(),
+    max_epochs_per_block: z.string(),
+    staking_reward_percentage: z.number(),
+    max_commission_rate: z.number(),
+    max_commission_rate_increase_per_epoch: z.number(),
+    free_mining_until_epoch: z.string(),
+    free_mining_max_gas_limit: z.string(),
+    miner_allowed_msgs: z.array(z.string()).default([]),
+    max_free_tx_per_epoch: z.number(),
+  })
+  .strict();
+export type MinerModuleParams = z.infer<typeof MinerModuleParamsSchema>;
+
+export const EpochInfoSchema = z
+  .object({
+    epoch: z.string(),
+    seed: z.string(),
+    threshold: z.string(),
+    beacon_r: z.string(),
+    finalized: z.boolean(),
+  })
+  .strict();
+export type EpochInfo = z.infer<typeof EpochInfoSchema>;
+
+export const ExchangeMarketSchema = z
+  .object({
+    id: z.string(),
+    base_denom: z.string(),
+    quote_denom: z.string(),
+    escrow_address: z.string(),
+    maker_fee_rate: z.string(),
+    taker_fee_rate: z.string(),
+    last_price: z.string().optional(),
+    last_matching_height: z.string().optional(),
+  })
+  .strict();
+export type ExchangeMarket = z.infer<typeof ExchangeMarketSchema>;
+
+export const ExchangeOrderSchema = z
+  .object({
+    id: z.string(),
+    orderer: z.string(),
+    market_id: z.string(),
+    is_buy: z.boolean(),
+    price: z.string(),
+    quantity: z.string(),
+    msg_height: z.string(),
+    open_quantity: z.string(),
+    remaining_deposit: z.string(),
+    deadline: z.string(),
+  })
+  .strict();
+export type ExchangeOrder = z.infer<typeof ExchangeOrderSchema>;
+
+export const OrderBookPriceLevelSchema = z
+  .object({
+    p: z.string(),
+    q: z.string(),
+  })
+  .strict();
+export type OrderBookPriceLevel = z.infer<typeof OrderBookPriceLevelSchema>;
+
+export const OrderBookSchema = z
+  .object({
+    price_interval: z.string(),
+    sells: z.array(OrderBookPriceLevelSchema),
+    buys: z.array(OrderBookPriceLevelSchema),
+  })
+  .strict();
+export type OrderBook = z.infer<typeof OrderBookSchema>;
+
+export const CoinSchema = z
+  .object({
+    denom: z.string(),
+    amount: z.string(),
+  })
+  .strict();
+export type Coin = z.infer<typeof CoinSchema>;
+
+export const ExchangeFeesSchema = z
+  .object({
+    default_maker_fee_rate: z.string(),
+    default_taker_fee_rate: z.string(),
+  })
+  .strict();
+export type ExchangeFees = z.infer<typeof ExchangeFeesSchema>;
+
+export const ExchangeParamsSchema = z
+  .object({
+    market_creation_fee: z.array(CoinSchema).default([]),
+    fees: ExchangeFeesSchema,
+    max_order_lifespan: z.string(),
+    max_order_price_ratio: z.string(),
+    max_swap_routes_len: z.number(),
+  })
+  .strict();
+export type ExchangeParams = z.infer<typeof ExchangeParamsSchema>;
+
+export const PageResponseSchema = z
+  .object({
+    next_key: z.string().optional(),
+    total: z.string().optional(),
+  })
+  .strict();
+export type PageResponse = z.infer<typeof PageResponseSchema>;
+
+export const LicenseResponseSchema = z.object({ license: LicenseSchema }).strict();
+export type LicenseResponse = z.infer<typeof LicenseResponseSchema>;
+
+export const LicensesResponseSchema = z
+  .object({
+    licenses: z.array(LicenseSchema).default([]),
+    next_license_id: z.string().optional(),
+  })
+  .strict();
+export type LicensesResponse = z.infer<typeof LicensesResponseSchema>;
+
+export const BalanceResponseSchema = z.object({ balance: z.string() }).strict();
+export type BalanceResponse = z.infer<typeof BalanceResponseSchema>;
+
+export const OwnerResponseSchema = z.object({ owner: z.string() }).strict();
+export type OwnerResponse = z.infer<typeof OwnerResponseSchema>;
+
+export const TokenOfOwnerByIndexResponseSchema = z.object({ id: z.string() }).strict();
+export type TokenOfOwnerByIndexResponse = z.infer<typeof TokenOfOwnerByIndexResponseSchema>;
+
+export const OwnedByResponseSchema = z
+  .object({
+    license_ids: z.array(z.string()).default([]),
+    total: z.number(),
+    next_license_id: z.string(),
+  })
+  .strict();
+export type OwnedByResponse = z.infer<typeof OwnedByResponseSchema>;
+
+export const TotalSupplyResponseSchema = z.object({ total_supply: z.string() }).strict();
+export type TotalSupplyResponse = z.infer<typeof TotalSupplyResponseSchema>;
+
+export const IsActiveResponseSchema = z.object({ is_active: z.boolean() }).strict();
+export type IsActiveResponse = z.infer<typeof IsActiveResponseSchema>;
+
+export const LicenseParamsResponseSchema = z
+  .object({ params: LicenseModuleParamsSchema })
+  .strict();
+export type LicenseParamsResponse = z.infer<typeof LicenseParamsResponseSchema>;
+
+export const MintersResponseSchema = z
+  .object({
+    minters: z.array(z.string()).default([]),
+    next_address: z.string(),
+  })
+  .strict();
+export type MintersResponse = z.infer<typeof MintersResponseSchema>;
+
+export const TransferUnlockTimeResponseSchema = z
+  .object({ unlock_time: z.string() })
+  .strict();
+export type TransferUnlockTimeResponse = z.infer<typeof TransferUnlockTimeResponseSchema>;
+
+export const KycApproversResponseSchema = z
+  .object({
+    approvers: z.array(z.string()).default([]),
+    next_address: z.string(),
+  })
+  .strict();
+export type KycApproversResponse = z.infer<typeof KycApproversResponseSchema>;
+
+export const ApprovedMembersResponseSchema = z
+  .object({
+    members: z.array(z.string()).default([]),
+    next_address: z.string(),
+  })
+  .strict();
+export type ApprovedMembersResponse = z.infer<typeof ApprovedMembersResponseSchema>;
+
+export const IsApprovedMemberResponseSchema = z
+  .object({ is_approved: z.boolean() })
+  .strict();
+export type IsApprovedMemberResponse = z.infer<typeof IsApprovedMemberResponseSchema>;
+
+export const IsKycApproverResponseSchema = z.object({ is_approver: z.boolean() }).strict();
+export type IsKycApproverResponse = z.infer<typeof IsKycApproverResponseSchema>;
+
+export const ActiveLicenseCountAtResponseSchema = z.object({ count: z.string() }).strict();
+export type ActiveLicenseCountAtResponse = z.infer<typeof ActiveLicenseCountAtResponseSchema>;
+
+export const CurrentEpochResponseSchema = z
+  .object({
+    epoch: z.string(),
+    seed: z.string(),
+    threshold: z.string(),
+  })
+  .strict();
+export type CurrentEpochResponse = z.infer<typeof CurrentEpochResponseSchema>;
+
+export const BeaconResponseSchema = z
+  .object({
+    r: z.string(),
+    finalized: z.boolean(),
+  })
+  .strict();
+export type BeaconResponse = z.infer<typeof BeaconResponseSchema>;
+
+export const MinerParamsResponseSchema = z
+  .object({ params: MinerModuleParamsSchema })
+  .strict();
+export type MinerParamsResponse = z.infer<typeof MinerParamsResponseSchema>;
+
+export const EmissionScheduleResponseSchema = z
+  .object({
+    schedule: z.array(YearEmissionSchema).default([]),
+  })
+  .strict();
+export type EmissionScheduleResponse = z.infer<typeof EmissionScheduleResponseSchema>;
+
+export const EpochInfoResponseSchema = z
+  .object({
+    info: EpochInfoSchema,
+  })
+  .strict();
+export type EpochInfoResponse = z.infer<typeof EpochInfoResponseSchema>;
+
+export const EpochsResponseSchema = z
+  .object({
+    epochs: z.array(EpochInfoSchema).default([]),
+    next_epoch_key: z.string().optional(),
+    nextEpochKey: z.string().optional(),
+    next_epoch: z.string().optional(),
+  })
+  .strict();
+export type EpochsResponse = z.infer<typeof EpochsResponseSchema>;
+
+export const OperatorInfoResponseSchema = z
+  .object({
+    info: OperatorSchema.optional(),
+    operator: OperatorSchema.optional(),
+  })
+  .strict();
+export type OperatorInfoResponse = z.infer<typeof OperatorInfoResponseSchema>;
+
+export const OperatorsResponseSchema = z
+  .object({
+    operators: z.array(OperatorSchema).default([]),
+  })
+  .strict();
+export type OperatorsResponse = z.infer<typeof OperatorsResponseSchema>;
+
+export const LicenseDelegationResponseSchema = z
+  .object({
+    delegation: MiningDelegationSchema.nullable().optional(),
+    is_delegated: z.boolean(),
+  })
+  .strict();
+export type LicenseDelegationResponse = z.infer<typeof LicenseDelegationResponseSchema>;
+
+export const DelegatedLicensesResponseSchema = z
+  .object({
+    license_ids: z.array(z.string()).default([]),
+  })
+  .strict();
+export type DelegatedLicensesResponse = z.infer<typeof DelegatedLicensesResponseSchema>;
+
+export const ExchangeParamsResponseSchema = z
+  .object({ params: ExchangeParamsSchema })
+  .strict();
+export type ExchangeParamsResponse = z.infer<typeof ExchangeParamsResponseSchema>;
+
+export const MarketsResponseSchema = z
+  .object({
+    markets: z.array(ExchangeMarketSchema).default([]),
+    pagination: PageResponseSchema.optional(),
+  })
+  .strict();
+export type MarketsResponse = z.infer<typeof MarketsResponseSchema>;
+
+export const MarketResponseSchema = z
+  .object({
+    market: ExchangeMarketSchema,
+  })
+  .strict();
+export type MarketResponse = z.infer<typeof MarketResponseSchema>;
+
+export const OrdersResponseSchema = z
+  .object({
+    orders: z.array(ExchangeOrderSchema).default([]),
+    pagination: PageResponseSchema.optional(),
+  })
+  .strict();
+export type OrdersResponse = z.infer<typeof OrdersResponseSchema>;
+
+export const OrderResponseSchema = z
+  .object({
+    order: ExchangeOrderSchema,
+  })
+  .strict();
+export type OrderResponse = z.infer<typeof OrderResponseSchema>;
+
+export const OrderBookResponseSchema = z
+  .object({
+    order_books: z.array(OrderBookSchema).default([]),
+  })
+  .strict();
+export type OrderBookResponse = z.infer<typeof OrderBookResponseSchema>;
