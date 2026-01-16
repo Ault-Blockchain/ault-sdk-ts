@@ -1,6 +1,7 @@
 export const SDK_VERSION = "0.1.0";
 
 export * from "./client";
+export * from "./high-level-client";
 
 export * from "./eip712/domain";
 export * from "./eip712/types";

@@ -366,6 +366,7 @@ function mapMinerParams(input?: Record<string, unknown>): MinerParams {
 export async function queryChainId(
   network: NetworkConfig,
   fetchFn?: FetchFn,
+  fetchOptions?: import("../core/http").FetchWithRetryOptions,
 ): Promise<string> {
   if (cachedChainId) {
     return cachedChainId;
@@ -375,7 +376,7 @@ export async function queryChainId(
     const data = await fetchJson<NodeInfoResponse>(
       `${network.restUrl}/cosmos/base/tendermint/v1beta1/node_info`,
       {},
-      { timeout: TIMING_CONSTANTS.API_TIMEOUT_MS, retries: 2 },
+      { timeout: TIMING_CONSTANTS.API_TIMEOUT_MS, retries: 2, ...fetchOptions },
       fetchFn,
     );
     const chainId = data.default_node_info?.network ?? data.node_info?.network;
@@ -394,11 +395,12 @@ export async function queryAccount(
   network: NetworkConfig,
   address: string,
   fetchFn?: FetchFn,
+  fetchOptions?: import("../core/http").FetchWithRetryOptions,
 ): Promise<AccountInfo> {
   const data = await fetchJson<AccountQueryResponse>(
     `${network.restUrl}/cosmos/auth/v1beta1/accounts/${address}`,
     {},
-    { timeout: TIMING_CONSTANTS.API_TIMEOUT_MS, retries: 3 },
+    { timeout: TIMING_CONSTANTS.API_TIMEOUT_MS, retries: 3, ...fetchOptions },
     fetchFn,
   );
 
@@ -695,6 +697,7 @@ export interface SignAndBroadcastParams {
   memo?: string;
   gasLimit?: string;
   fetchFn?: FetchFn;
+  fetchOptions?: import("../core/http").FetchWithRetryOptions;
 }
 
 export async function signAndBroadcastEip712({
@@ -705,6 +708,7 @@ export async function signAndBroadcastEip712({
   memo = "",
   gasLimit,
   fetchFn,
+  fetchOptions,
 }: SignAndBroadcastParams): Promise<{ txHash: string; code: number; rawLog?: string }> {
   const resolvedSigner = normalizeSigner(signer);
   if (!resolvedSigner) {
@@ -715,8 +719,8 @@ export async function signAndBroadcastEip712({
   for (const msg of msgs) {
     assertSnakeCaseKeysDeep(`message value for ${msg.typeUrl}`, msg.value);
   }
-  const actualChainId = await queryChainId(network, fetchFn);
-  const accountInfo = await queryAccount(network, resolvedSignerAddress, fetchFn);
+  const actualChainId = await queryChainId(network, fetchFn, fetchOptions);
+  const accountInfo = await queryAccount(network, resolvedSignerAddress, fetchFn, fetchOptions);
 
   const context: Eip712TxContext = {
     chainId: actualChainId,
@@ -781,7 +785,7 @@ export async function signAndBroadcastEip712({
   >(
     `${network.restUrl}/cosmos/tx/v1beta1/txs`,
     { tx_bytes: txBytesBase64, mode: "BROADCAST_MODE_SYNC" },
-    { timeout: TIMING_CONSTANTS.API_TIMEOUT_MS, retries: 2 },
+    { timeout: TIMING_CONSTANTS.API_TIMEOUT_MS, retries: 2, ...fetchOptions },
     fetchFn,
   );
 

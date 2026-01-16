@@ -85,6 +85,7 @@ export function createAultClient(options: AultClientOptions): AultClient {
           ...params,
           network: options.network,
           fetchFn: options.fetchFn,
+          fetchOptions: options.fetchOptions,
           signer: params.signer ?? options.signer,
           signerAddress: params.signerAddress ?? options.signerAddress,
         }),

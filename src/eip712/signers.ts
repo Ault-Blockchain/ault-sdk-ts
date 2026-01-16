@@ -5,10 +5,30 @@ import { evmToAult, isValidAultAddress, isValidEvmAddress } from "../utils/addre
 export type SignTypedDataResult = { signature: string } | string;
 export type SignTypedDataFn = (typedData: Eip712TypedData) => Promise<SignTypedDataResult>;
 
+/**
+ * Symbol used to identify AultSigner instances created by this SDK.
+ * This prevents mis-detection when duck-typing wallet types.
+ */
+export const AULT_SIGNER_MARKER = Symbol.for("ault-sdk:signer");
+
 export interface AultSigner {
   signTypedData: SignTypedDataFn;
   address?: string;
   getAddress?: () => Promise<string> | string;
+  /** Internal marker to identify SDK-created signers */
+  [AULT_SIGNER_MARKER]?: true;
+}
+
+/**
+ * Check if an object is an AultSigner created by this SDK.
+ */
+export function isAultSigner(obj: unknown): obj is AultSigner {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    AULT_SIGNER_MARKER in obj &&
+    (obj as Record<symbol, unknown>)[AULT_SIGNER_MARKER] === true
+  );
 }
 
 export type SignerInput = AultSigner | SignTypedDataFn;
@@ -108,6 +128,7 @@ export function createEip1193Signer(options: {
 }): AultSigner {
   const method = options.method ?? "eth_signTypedData_v4";
   return {
+    [AULT_SIGNER_MARKER]: true,
     address: options.address,
     signTypedData: async (typedData) => {
       const payload =
@@ -139,6 +160,7 @@ export function createViemSigner(
   };
 
   return {
+    [AULT_SIGNER_MARKER]: true,
     getAddress: async () => {
       const addr = await getAddress();
       if (!addr) throw new Error("Viem wallet has no address");
@@ -180,6 +202,7 @@ export function createEthersSigner(signer: EthersSignerLike): AultSigner {
     throw new Error("Ethers signer must implement signTypedData or _signTypedData.");
   }
   return {
+    [AULT_SIGNER_MARKER]: true,
     getAddress: () => signer.getAddress(),
     signTypedData: async (typedData) => {
       const types = stripEip712Domain(typedData.types);
@@ -194,6 +217,7 @@ export function createPrivySigner(options: {
   address?: string;
 }): AultSigner {
   return {
+    [AULT_SIGNER_MARKER]: true,
     address: options.address,
     signTypedData: (typedData) =>
       options.signTypedData(typedData, options.address ? { address: options.address } : undefined),

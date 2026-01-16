@@ -21,15 +21,34 @@ pnpm add -D tsx
 
 # Run examples
 npx tsx examples/query-licenses.ts
-npx tsx examples/query-miner.ts
-npx tsx examples/query-exchange.ts
-npx tsx examples/delegate-mining.ts
-npx tsx examples/place-exchange-order.ts
+npx tsx examples/high-level-complete-workflow.ts
 ```
 
-## Example Descriptions
+For transaction examples, set your private key:
 
-### Query Examples (Read-Only)
+```bash
+PRIVATE_KEY=your_private_key npx tsx examples/high-level-delegate-mining.ts
+```
+
+## High-Level Client Examples (Recommended)
+
+These examples use the new `createClient()` high-level API which is simpler and handles all the complexity internally:
+
+| Example | Description |
+|---------|-------------|
+| `high-level-delegate-mining.ts` | Delegate mining licenses with simple API calls |
+| `high-level-exchange-orders.ts` | Place orders with lifespan in seconds (not nanoseconds!) |
+| `high-level-complete-workflow.ts` | Complete API reference showing all operations |
+| `high-level-signers.ts` | Different ways to initialize the client (viem, ethers, MetaMask, Privy) |
+
+**Key advantages of high-level API:**
+- No message building required
+- Numbers work for IDs (no bigints needed)
+- EVM addresses auto-converted to ault1 format
+- Lifespan in seconds (auto-converted to nanoseconds)
+- `result.success` boolean for easy checking
+
+## Query Examples (Read-Only)
 
 These examples demonstrate REST API queries and don't require a wallet:
 
@@ -39,16 +58,50 @@ These examples demonstrate REST API queries and don't require a wallet:
 | `query-miner.ts` | Query miner data: epochs, operators, emission info, delegations |
 | `query-exchange.ts` | Query exchange data: markets, orders, order books |
 
-### Transaction Examples
+## Low-Level Transaction Examples
 
-These examples show how to build EIP-712 typed data for signing:
+These examples show the low-level API with manual message building:
 
 | Example | Description |
 |---------|-------------|
-| `delegate-mining.ts` | Build a transaction to delegate mining licenses to an operator |
-| `place-exchange-order.ts` | Build limit orders, market orders, and cancel orders for the DEX |
+| `delegate-mining.ts` | Low-level delegate mining using `msg` namespace and `signAndBroadcastEip712` |
+| `place-exchange-order.ts` | Low-level exchange orders with manual nanosecond conversion |
 
-**Note:** Transaction examples show the typed data structure but don't actually sign or broadcast since they require a real wallet. See the code comments for instructions on integrating with MetaMask, ethers.js, or viem.
+**Note:** For most use cases, prefer the high-level examples above.
+
+## Quick Comparison
+
+### High-Level (Recommended)
+```typescript
+const client = await createClient({
+  network: getNetworkConfig("ault_10904-1"),
+  signer: privateKeyToAccount("0x..."),
+});
+
+await client.delegateLicenses({
+  licenseIds: [1, 2, 3],
+  operator: "0xOperator...",
+});
+```
+
+### Low-Level
+```typescript
+const client = createAultClient({ network });
+const signer = createPrivateKeySigner(privateKey);
+
+await signAndBroadcastEip712({
+  network,
+  signer,
+  signerAddress: evmToAult(address),
+  msgs: [
+    msg.miner.delegate({
+      owner: signerAddress,
+      operator: operatorAddress,
+      license_ids: [1n, 2n, 3n],
+    }),
+  ],
+});
+```
 
 ## Configuration
 
@@ -65,7 +118,8 @@ const LICENSE_ID = '1';
 By default, examples connect to testnet (`ault_10904-1`). To use localnet:
 
 ```typescript
-const client = createAultClient({
+const client = await createClient({
   network: getNetworkConfig('ault_20904-1'), // localnet
+  signer: mySigner,
 });
 ```

@@ -73,27 +73,33 @@ async function main() {
   console.log('-------------------------------');
   try {
     const orderBook = await client.rest.exchange.getOrderBook(MARKET_ID, {
-      level_start: 0,
-      level_end: 5,
+      levelStart: 0,
+      levelEnd: 5,
     });
 
-    console.log(`  Price interval: ${orderBook.order_book.price_interval}`);
+    if (orderBook.order_books.length === 0) {
+      console.log('  No order book data');
+      return;
+    }
+
+    const book = orderBook.order_books[0];
+    console.log(`  Price interval: ${book.price_interval}`);
 
     console.log('\n  Asks (Sells):');
-    if (orderBook.order_book.sells.length === 0) {
+    if (book.sells.length === 0) {
       console.log('    No sell orders');
     } else {
-      orderBook.order_book.sells.forEach((level) => {
-        console.log(`    Price: ${level.price} | Quantity: ${level.quantity}`);
+      book.sells.forEach((level) => {
+        console.log(`    Price: ${level.p} | Quantity: ${level.q}`);
       });
     }
 
     console.log('\n  Bids (Buys):');
-    if (orderBook.order_book.buys.length === 0) {
+    if (book.buys.length === 0) {
       console.log('    No buy orders');
     } else {
-      orderBook.order_book.buys.forEach((level) => {
-        console.log(`    Price: ${level.price} | Quantity: ${level.quantity}`);
+      book.buys.forEach((level) => {
+        console.log(`    Price: ${level.p} | Quantity: ${level.q}`);
       });
     }
   } catch (error) {
