@@ -48,6 +48,35 @@ These examples use the new `createClient()` high-level API which is simpler and 
 - Lifespan uses protobuf Duration (seconds + nanos)
 - `result.success` boolean for easy checking
 
+## Web Examples
+
+Interactive web applications demonstrating SDK integration with wallet connect:
+
+| Example | Description |
+|---------|-------------|
+| `web/delegation-demo/` | React + Vite app with MetaMask wallet connect, license viewing, and delegation |
+
+### Running the Web Demo
+
+```bash
+# First, build the SDK (from repo root)
+pnpm build
+
+# Then run the demo
+cd examples/web/delegation-demo
+bun install
+bun dev
+```
+
+Open `http://localhost:5173?operator=0xYourOperatorAddress`
+
+**Features:**
+- Connect MetaMask wallet
+- View all owned licenses with delegation status
+- Delegate all undelegated licenses to an operator
+- Undelegate (cancel delegation) for all delegated licenses
+- Preload operator address via `?operator=` query param
+
 ## Query Examples (Read-Only)
 
 These examples demonstrate REST API queries and don't require a wallet:
