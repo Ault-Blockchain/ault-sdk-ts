@@ -20,14 +20,14 @@ All examples can be run with `tsx`:
 pnpm add -D tsx
 
 # Run examples
-npx tsx examples/query-licenses.ts
-npx tsx examples/high-level-complete-workflow.ts
+npx tsx examples/low-level/query-licenses.ts
+npx tsx examples/high-level/complete-workflow.ts
 ```
 
 For transaction examples, set your private key:
 
 ```bash
-PRIVATE_KEY=your_private_key npx tsx examples/high-level-delegate-mining.ts
+PRIVATE_KEY=your_private_key npx tsx examples/high-level/delegate-mining.ts
 ```
 
 ## High-Level Client Examples (Recommended)
@@ -36,10 +36,10 @@ These examples use the new `createClient()` high-level API which is simpler and 
 
 | Example | Description |
 |---------|-------------|
-| `high-level-delegate-mining.ts` | Delegate mining licenses with simple API calls |
-| `high-level-exchange-orders.ts` | Place orders with protobuf Duration lifespan |
-| `high-level-complete-workflow.ts` | Complete API reference showing all operations |
-| `high-level-signers.ts` | Different ways to initialize the client (viem, ethers, MetaMask, Privy) |
+| `high-level/delegate-mining.ts` | Delegate mining licenses with simple API calls |
+| `high-level/exchange-orders.ts` | Place orders with protobuf Duration lifespan |
+| `high-level/complete-workflow.ts` | Complete API reference showing all operations |
+| `high-level/signers.ts` | Different ways to initialize the client (viem, ethers, MetaMask, Privy) |
 
 **Key advantages of high-level API:**
 - No message building required
@@ -54,9 +54,9 @@ These examples demonstrate REST API queries and don't require a wallet:
 
 | Example | Description |
 |---------|-------------|
-| `query-licenses.ts` | Query license information: balance, owned licenses, minters, KYC status |
-| `query-miner.ts` | Query miner data: epochs, operators, emission info, delegations |
-| `query-exchange.ts` | Query exchange data: markets, orders, order books |
+| `low-level/query-licenses.ts` | Query license information: balance, owned licenses, minters, KYC status |
+| `low-level/query-miner.ts` | Query miner data: epochs, operators, emission info, delegations |
+| `low-level/query-exchange.ts` | Query exchange data: markets, orders, order books |
 
 ## Low-Level Transaction Examples
 
@@ -64,8 +64,8 @@ These examples show the low-level API with manual message building:
 
 | Example | Description |
 |---------|-------------|
-| `delegate-mining.ts` | Low-level delegate mining using `msg` namespace and `signAndBroadcastEip712` |
-| `place-exchange-order.ts` | Low-level exchange orders with manual nanosecond conversion |
+| `low-level/delegate-mining.ts` | Low-level delegate mining using `msg` namespace and `signAndBroadcastEip712` |
+| `low-level/place-exchange-order.ts` | Low-level exchange orders with manual nanosecond conversion |
 
 **Note:** For most use cases, prefer the high-level examples above.
 
