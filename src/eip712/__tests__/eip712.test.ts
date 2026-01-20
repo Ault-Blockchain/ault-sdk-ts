@@ -3,6 +3,7 @@ import { EIP712_MSG_TYPES } from "../registry";
 import { validateEip712FieldOrder } from "../field-order";
 import { msg, buildEip712TypedData, type AnyEip712Msg, type Eip712TxContext } from "../builder";
 import { base64ToBytes } from "../../core/base64";
+import { MSG_ENCODERS } from "../msg-encoders.generated";
 
 // ============================================================================
 // Field Ordering Tests - Critical for Cosmos EVM signing
@@ -400,5 +401,228 @@ describe("EIP712_MSG_TYPES registry", () => {
         }
       }
     }
+  });
+});
+
+// ============================================================================
+// BigInt Field Validation Tests - Safe integer boundary enforcement
+// ============================================================================
+
+describe("bigint field validation", () => {
+  const txContext: Eip712TxContext = {
+    chainId: "ault_10904-1",
+    accountNumber: "1",
+    sequence: "0",
+    fee: { amount: "1000", denom: "aault", gas: "200000" },
+    memo: "",
+  };
+
+  describe("Duration fields (builder.ts toBigIntLike)", () => {
+    // Tests the toBigIntLike function in builder.ts via Duration field validation
+
+    it("accepts bigint seconds in Duration", () => {
+      const message = msg.exchange.placeLimitOrder({
+        sender: "ault1trader",
+        marketId: 1n,
+        isBuy: true,
+        price: "100",
+        quantity: "10",
+        lifespan: { seconds: 3600n, nanos: 0 },
+      });
+      const typedData = buildEip712TypedData(txContext, [message]);
+      expect(typedData).toBeDefined();
+    });
+
+    it("accepts safe integer seconds in Duration", () => {
+      const message = msg.exchange.placeLimitOrder({
+        sender: "ault1trader",
+        marketId: 1n,
+        isBuy: true,
+        price: "100",
+        quantity: "10",
+        lifespan: { seconds: 3600 as unknown as bigint, nanos: 0 },
+      });
+      const typedData = buildEip712TypedData(txContext, [message]);
+      expect(typedData).toBeDefined();
+    });
+
+    it("accepts string seconds in Duration", () => {
+      const message = msg.exchange.placeLimitOrder({
+        sender: "ault1trader",
+        marketId: 1n,
+        isBuy: true,
+        price: "100",
+        quantity: "10",
+        lifespan: { seconds: "9007199254740993" as unknown as bigint, nanos: 0 },
+      });
+      const typedData = buildEip712TypedData(txContext, [message]);
+      expect(typedData).toBeDefined();
+    });
+
+    it("throws for unsafe integer seconds in Duration", () => {
+      expect(() => {
+        const message = msg.exchange.placeLimitOrder({
+          sender: "ault1trader",
+          marketId: 1n,
+          isBuy: true,
+          price: "100",
+          quantity: "10",
+          lifespan: { seconds: (Number.MAX_SAFE_INTEGER + 2) as unknown as bigint, nanos: 0 },
+        });
+        buildEip712TypedData(txContext, [message]);
+      }).toThrow(/exceeds safe integer range/);
+    });
+
+    it("throws for non-integer seconds in Duration", () => {
+      expect(() => {
+        const message = msg.exchange.placeLimitOrder({
+          sender: "ault1trader",
+          marketId: 1n,
+          isBuy: true,
+          price: "100",
+          quantity: "10",
+          lifespan: { seconds: 1.5 as unknown as bigint, nanos: 0 },
+        });
+        buildEip712TypedData(txContext, [message]);
+      }).toThrow(/must be an integer/);
+    });
+  });
+
+  describe("Protobuf encoding (msg-encoders requireBigIntLike)", () => {
+    // Tests the requireBigIntLike function in msg-encoders.generated.ts
+
+    const encode = MSG_ENCODERS["/ault.license.v1.MsgTransferLicense"];
+
+    it("accepts bigint values", () => {
+      const result = encode({
+        from: "ault1from",
+        to: "ault1to",
+        licenseId: 9007199254740993n,
+        reason: "test",
+      });
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it("accepts safe integer numbers", () => {
+      const result = encode({
+        from: "ault1from",
+        to: "ault1to",
+        licenseId: 123,
+        reason: "test",
+      });
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it("accepts numeric strings for large values", () => {
+      const result = encode({
+        from: "ault1from",
+        to: "ault1to",
+        licenseId: "9007199254740993",
+        reason: "test",
+      });
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it("throws for numbers above MAX_SAFE_INTEGER", () => {
+      expect(() =>
+        encode({
+          from: "ault1from",
+          to: "ault1to",
+          licenseId: Number.MAX_SAFE_INTEGER + 2,
+          reason: "test",
+        })
+      ).toThrow(/exceeds safe integer range/);
+    });
+
+    it("throws for non-integer numbers", () => {
+      expect(() =>
+        encode({
+          from: "ault1from",
+          to: "ault1to",
+          licenseId: 1.5,
+          reason: "test",
+        })
+      ).toThrow(/must be an integer/);
+    });
+
+    it("throws for empty strings", () => {
+      expect(() =>
+        encode({
+          from: "ault1from",
+          to: "ault1to",
+          licenseId: "   ",
+          reason: "test",
+        })
+      ).toThrow(/must be a bigint/);
+    });
+  });
+
+  describe("Bytes fields (msg-encoders requireBytes)", () => {
+    // Tests the requireBytes function in msg-encoders.generated.ts
+    // Using MsgSubmitWork which has bytes fields: y, proof, nonce
+
+    const encode = MSG_ENCODERS["/ault.miner.v1.MsgSubmitWork"];
+
+    it("accepts Uint8Array values", () => {
+      const result = encode({
+        submitter: "ault1submitter",
+        licenseId: 1n,
+        epoch: 1n,
+        y: new Uint8Array([1, 2, 3]),
+        proof: new Uint8Array([4, 5, 6]),
+        nonce: new Uint8Array([7, 8, 9]),
+      });
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it("accepts valid base64 strings", () => {
+      const result = encode({
+        submitter: "ault1submitter",
+        licenseId: 1n,
+        epoch: 1n,
+        y: "AQID", // [1, 2, 3]
+        proof: "BAUG", // [4, 5, 6]
+        nonce: "BwgJ", // [7, 8, 9]
+      });
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it("accepts empty base64 string as empty bytes", () => {
+      const result = encode({
+        submitter: "ault1submitter",
+        licenseId: 1n,
+        epoch: 1n,
+        y: "",
+        proof: "BAUG",
+        nonce: "BwgJ",
+      });
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it("throws for invalid base64 strings", () => {
+      expect(() =>
+        encode({
+          submitter: "ault1submitter",
+          licenseId: 1n,
+          epoch: 1n,
+          y: "not!valid!base64",
+          proof: "BAUG",
+          nonce: "BwgJ",
+        })
+      ).toThrow(/must be a Uint8Array or valid base64 string/);
+    });
+
+    it("throws for non-string/non-Uint8Array values", () => {
+      expect(() =>
+        encode({
+          submitter: "ault1submitter",
+          licenseId: 1n,
+          epoch: 1n,
+          y: 12345,
+          proof: "BAUG",
+          nonce: "BwgJ",
+        })
+      ).toThrow(/must be a Uint8Array or base64 string/);
+    });
   });
 });

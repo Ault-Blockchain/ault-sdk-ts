@@ -797,10 +797,16 @@ function asRecord(value: unknown): Record<string, unknown> {
   return requireString(value, label);
 }`,
     requireBytes: `function requireBytes(value: unknown, label: string): Uint8Array {
-  if (!(value instanceof Uint8Array)) {
-    throw new Error(\`${"${label}"} must be a Uint8Array.\`);
+  if (value instanceof Uint8Array) {
+    return value;
   }
-  return value;
+  if (typeof value === \"string\") {
+    if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) {
+      throw new Error(\`${"${label}"} must be a Uint8Array or valid base64 string.\`);
+    }
+    return base64ToBytes(value);
+  }
+  throw new Error(\`${"${label}"} must be a Uint8Array or base64 string.\`);
 }`,
     requireBytesOrDefault: `function requireBytesOrDefault(value: unknown, label: string, defaultValue = new Uint8Array()): Uint8Array {
   if (value === undefined) {
@@ -848,6 +854,9 @@ function asRecord(value: unknown): Record<string, unknown> {
   if (typeof value === \"number\" && Number.isFinite(value)) {
     if (!Number.isInteger(value)) {
       throw new Error(\`${"${label}"} must be an integer.\`);
+    }
+    if (!Number.isSafeInteger(value)) {
+      throw new Error(\`${"${label}"} exceeds safe integer range; use bigint or string.\`);
     }
     return BigInt(value);
   }
@@ -1061,6 +1070,7 @@ function asRecord(value: unknown): Record<string, unknown> {
       );
     lines.push(`import { ${specifiers.join(", ")} } from \"${importPath}\";`);
   }
+  lines.push('import { base64ToBytes } from "../core/base64";');
 
   lines.push("");
   lines.push(...helperLines);

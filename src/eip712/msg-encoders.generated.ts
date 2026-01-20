@@ -2,6 +2,7 @@
 import { MsgCancelAllOrders, MsgCancelOrder, MsgCreateMarket, MsgPlaceLimitOrder, MsgPlaceMarketOrder, MsgUpdateMarketParams } from "../proto/gen/ault/exchange/v1beta1/tx";
 import { MsgApproveMember, MsgBatchApproveMember, MsgBatchMintLicense, MsgBatchRevokeMember, MsgBurnLicense, MsgMintLicense, MsgRevokeLicense, MsgRevokeMember, MsgSetKYCApprovers, MsgSetMinters, MsgSetParams, MsgSetTokenURI, MsgTransferLicense, MsgUpdateParams as MsgUpdateParamsAultLicenseV1 } from "../proto/gen/ault/license/v1/tx";
 import { MsgBatchSubmitWork, MsgCancelMiningDelegation, MsgDelegateMining, MsgRedelegateMining, MsgRegisterOperator, MsgSetOwnerVrfKey, MsgSubmitWork, MsgUnregisterOperator, MsgUpdateOperatorInfo, MsgUpdateParams as MsgUpdateParamsAultMinerV1 } from "../proto/gen/ault/miner/v1/tx";
+import { base64ToBytes } from "../core/base64";
 
 const EMPTY_RECORD: Record<string, unknown> = {};
 
@@ -34,10 +35,16 @@ function requireStringOrDefault(value: unknown, label: string, defaultValue = ""
 }
 
 function requireBytes(value: unknown, label: string): Uint8Array {
-  if (!(value instanceof Uint8Array)) {
-    throw new Error(`${label} must be a Uint8Array.`);
+  if (value instanceof Uint8Array) {
+    return value;
   }
-  return value;
+  if (typeof value === "string") {
+    if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) {
+      throw new Error(`${label} must be a Uint8Array or valid base64 string.`);
+    }
+    return base64ToBytes(value);
+  }
+  throw new Error(`${label} must be a Uint8Array or base64 string.`);
 }
 
 function requireBool(value: unknown, label: string): boolean {
@@ -77,6 +84,9 @@ function requireBigIntLike(value: unknown, label: string): bigint {
   if (typeof value === "number" && Number.isFinite(value)) {
     if (!Number.isInteger(value)) {
       throw new Error(`${label} must be an integer.`);
+    }
+    if (!Number.isSafeInteger(value)) {
+      throw new Error(`${label} exceeds safe integer range; use bigint or string.`);
     }
     return BigInt(value);
   }

@@ -133,6 +133,9 @@ function toBigIntLike(value: unknown, label: string): bigint {
     if (!Number.isInteger(value)) {
       throw new Error(`${label} must be an integer.`);
     }
+    if (!Number.isSafeInteger(value)) {
+      throw new Error(`${label} exceeds safe integer range; use bigint or string.`);
+    }
     return BigInt(value);
   }
   if (typeof value === "string" && value.trim() !== "") {
