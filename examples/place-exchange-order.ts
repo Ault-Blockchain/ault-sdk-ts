@@ -68,15 +68,15 @@ async function main() {
   // Order parameters
   const price = '1.5'; // Price per unit in quote denom
   const quantity = '100'; // Number of units to buy
-  const lifespanNanos = BigInt(3600) * BigInt(1_000_000_000); // 1 hour in nanoseconds
+  const lifespan = { seconds: 3600n, nanos: 0 }; // 1 hour
 
   const limitOrderMsg = msg.exchange.placeLimitOrder({
     sender: signerAddress,
-    market_id: MARKET_ID,
-    is_buy: true,
+    marketId: MARKET_ID,
+    isBuy: true,
     price,
     quantity,
-    lifespan: lifespanNanos,
+    lifespan,
   });
 
   console.log(`  Order details:`);
@@ -109,7 +109,7 @@ async function main() {
 
   const cancelMsg = msg.exchange.cancelAllOrders({
     sender: signerAddress,
-    market_id: MARKET_ID,
+    marketId: MARKET_ID,
   });
 
   console.log(`  Cancelling all orders in market #${MARKET_ID}...`);
@@ -150,11 +150,11 @@ function showDemoUsage() {
      msgs: [
        msg.exchange.placeLimitOrder({
          sender: "ault1...",
-         market_id: 1n,
-         is_buy: true,
+         marketId: 1n,
+         isBuy: true,
          price: "1.5",
          quantity: "100",
-         lifespan: 3600n * 1_000_000_000n, // 1 hour in nanoseconds
+         lifespan: { seconds: 3600n, nanos: 0 }, // 1 hour
        }),
      ],
    });
@@ -170,8 +170,8 @@ function showDemoUsage() {
      msgs: [
        msg.exchange.placeMarketOrder({
          sender: "ault1...",
-         market_id: 1n,
-         is_buy: false,
+         marketId: 1n,
+         isBuy: false,
          quantity: "50",
        }),
      ],
@@ -186,7 +186,7 @@ function showDemoUsage() {
      msgs: [
        msg.exchange.cancelAllOrders({
          sender: "ault1...",
-         market_id: 1n,
+         marketId: 1n,
        }),
      ],
    });

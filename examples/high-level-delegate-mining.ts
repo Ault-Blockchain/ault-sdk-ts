@@ -84,7 +84,7 @@ async function main() {
   console.log(`  Delegating licenses ${licenseIds.join(", ")} to ${OPERATOR_ADDRESS}`);
 
   try {
-    const result = await client.delegateLicenses({
+    const result = await client.delegateMining({
       licenseIds, // Numbers work! No need for bigints
       operator: OPERATOR_ADDRESS,
       memo: "Delegated via high-level client",
@@ -103,7 +103,7 @@ async function main() {
   console.log("\n4. Redelegating to a new operator...");
   console.log("-------------------------------------");
   try {
-    const result = await client.redelegateLicenses({
+    const result = await client.redelegateMining({
       licenseIds: [1],
       newOperator: "0x1234567890123456789012345678901234567890", // EVM format works!
     });
@@ -117,11 +117,11 @@ async function main() {
     console.log(`  Error: ${(error as Error).message}`);
   }
 
-  // Step 5: Undelegate
-  console.log("\n5. Undelegating licenses...");
-  console.log("----------------------------");
+  // Step 5: Cancel mining delegation
+  console.log("\n5. Canceling mining delegation...");
+  console.log("----------------------------------");
   try {
-    const result = await client.undelegateLicenses({
+    const result = await client.cancelMiningDelegation({
       licenseIds: [2, 3],
     });
 
@@ -154,7 +154,7 @@ The high-level client makes transactions SO much simpler!
 
 2. Delegate mining licenses:
    --------------------------
-   const result = await client.delegateLicenses({
+   const result = await client.delegateMining({
      licenseIds: [1, 2, 3],      // Numbers work! No bigints needed
      operator: "0xOperator...",   // EVM addresses work! Auto-converted
    });
@@ -165,14 +165,14 @@ The high-level client makes transactions SO much simpler!
 
 3. Redelegate to a new operator:
    ------------------------------
-   await client.redelegateLicenses({
+   await client.redelegateMining({
      licenseIds: [1, 2],
      newOperator: "ault1newoperator...",
    });
 
-4. Undelegate licenses:
-   ----------------------
-   await client.undelegateLicenses({
+4. Cancel mining delegation:
+   --------------------------
+   await client.cancelMiningDelegation({
      licenseIds: [1, 2, 3],
    });
 
@@ -184,11 +184,11 @@ The high-level client makes transactions SO much simpler!
 
 Compare with the low-level API:
 ===============================
-OLD WAY (low-level):
-  const delegateMsg = msg.miner.delegate({
+Low-level API:
+  const delegateMsg = msg.miner.delegateMining({
     owner: signerAddress,
     operator: OPERATOR_ADDRESS,
-    license_ids: [1n, 2n, 3n],  // Must use bigints!
+    licenseIds: [1n, 2n, 3n],  // Must use bigints!
   });
   await signAndBroadcastEip712({
     network,
@@ -197,8 +197,8 @@ OLD WAY (low-level):
     msgs: [delegateMsg],
   });
 
-NEW WAY (high-level):
-  await client.delegateLicenses({
+High-level API:
+  await client.delegateMining({
     licenseIds: [1, 2, 3],
     operator: OPERATOR_ADDRESS,
   });

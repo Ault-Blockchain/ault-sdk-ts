@@ -85,10 +85,10 @@ async function main() {
   console.log("\n3. Delegating licenses...");
   console.log("--------------------------");
 
-  const delegateMsg = msg.miner.delegate({
+  const delegateMsg = msg.miner.delegateMining({
     owner: signerAddress,
     operator: OPERATOR_ADDRESS,
-    license_ids: LICENSE_IDS,
+    licenseIds: LICENSE_IDS,
   });
 
   console.log(`  Delegating licenses ${LICENSE_IDS.join(", ")} to ${OPERATOR_ADDRESS}`);
@@ -127,10 +127,10 @@ function showDemoUsage() {
      signer,
      signerAddress: "ault1...",
      msgs: [
-       msg.miner.delegate({
+       msg.miner.delegateMining({
          owner: "ault1...",
          operator: "ault1operator...",
-         license_ids: [1n, 2n, 3n],
+         licenseIds: [1n, 2n, 3n],
        }),
      ],
    });
@@ -144,10 +144,10 @@ function showDemoUsage() {
      signer,
      signerAddress: "ault1...",
      msgs: [
-       msg.miner.redelegate({
+       msg.miner.redelegateMining({
          owner: "ault1...",
-         new_operator: "ault1newoperator...",
-         license_ids: [1n, 2n],
+         newOperator: "ault1newoperator...",
+         licenseIds: [1n, 2n],
        }),
      ],
    });
@@ -159,9 +159,9 @@ function showDemoUsage() {
      signer,
      signerAddress: "ault1...",
      msgs: [
-       msg.miner.cancelDelegation({
+       msg.miner.cancelMiningDelegation({
          owner: "ault1...",
-         license_ids: [1n],
+         licenseIds: [1n],
        }),
      ],
    });

@@ -37,7 +37,7 @@ These examples use the new `createClient()` high-level API which is simpler and 
 | Example | Description |
 |---------|-------------|
 | `high-level-delegate-mining.ts` | Delegate mining licenses with simple API calls |
-| `high-level-exchange-orders.ts` | Place orders with lifespan in seconds (not nanoseconds!) |
+| `high-level-exchange-orders.ts` | Place orders with protobuf Duration lifespan |
 | `high-level-complete-workflow.ts` | Complete API reference showing all operations |
 | `high-level-signers.ts` | Different ways to initialize the client (viem, ethers, MetaMask, Privy) |
 
@@ -45,7 +45,7 @@ These examples use the new `createClient()` high-level API which is simpler and 
 - No message building required
 - Numbers work for IDs (no bigints needed)
 - EVM addresses auto-converted to ault1 format
-- Lifespan in seconds (auto-converted to nanoseconds)
+- Lifespan uses protobuf Duration (seconds + nanos)
 - `result.success` boolean for easy checking
 
 ## Query Examples (Read-Only)
@@ -78,7 +78,7 @@ const client = await createClient({
   signer: privateKeyToAccount("0x..."),
 });
 
-await client.delegateLicenses({
+await client.delegateMining({
   licenseIds: [1, 2, 3],
   operator: "0xOperator...",
 });
@@ -94,10 +94,10 @@ await signAndBroadcastEip712({
   signer,
   signerAddress: evmToAult(address),
   msgs: [
-    msg.miner.delegate({
+    msg.miner.delegateMining({
       owner: signerAddress,
       operator: operatorAddress,
-      license_ids: [1n, 2n, 3n],
+      licenseIds: [1n, 2n, 3n],
     }),
   ],
 });

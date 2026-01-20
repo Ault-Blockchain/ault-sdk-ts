@@ -51,7 +51,7 @@ async function main() {
   console.log("-------------------");
   try {
     const params = await client.license.getParams();
-    console.log(`  Supply cap: ${params.supply_cap ?? "unlimited"}`);
+    console.log(`  Supply cap: ${params.params.supply_cap ?? "unlimited"}`);
 
     const supply = await client.license.getTotalSupply();
     console.log(`  Total minted: ${supply.total_supply}`);
@@ -60,7 +60,7 @@ async function main() {
     console.log(`  Your balance: ${balance.balance} licenses`);
 
     const isApproved = await client.license.isApprovedMember(client.address);
-    console.log(`  KYC approved: ${isApproved.is_approved_member}`);
+    console.log(`  KYC approved: ${isApproved.is_approved}`);
   } catch (error) {
     console.log(`  Error: ${(error as Error).message}`);
   }
@@ -75,7 +75,7 @@ async function main() {
 
     const emission = await client.miner.getEmissionInfo();
     console.log(`  Current year: ${emission.current_year}`);
-    console.log(`  Emission per epoch: ${emission.current_emission_per_epoch}`);
+    console.log(`  Annual emission: ${emission.annual_emission}`);
 
     const operators = await client.miner.getOperators();
     console.log(`  Registered operators: ${operators.operators.length}`);
@@ -144,11 +144,8 @@ async function main() {
   console.log("-------------------");
   try {
     // Approve multiple members at once
-    const result = await client.batchApproveMembers({
-      members: [
-        "0x1111111111111111111111111111111111111111",
-        "0x2222222222222222222222222222222222222222",
-      ],
+    const result = await client.batchApproveMember({
+      members: ["0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222"],
     });
     console.log(`  Batch approve: ${result.success ? "SUCCESS" : "FAILED"}`);
   } catch (error) {
@@ -164,7 +161,7 @@ async function main() {
   console.log("3.1 Delegate Licenses");
   console.log("----------------------");
   try {
-    const result = await client.delegateLicenses({
+    const result = await client.delegateMining({
       licenseIds: [1, 2, 3], // Numbers work!
       operator: "ault1operatoraddress00000000000000000000000",
     });
@@ -200,7 +197,7 @@ async function main() {
       isBuy: true,
       price: "1.5",
       quantity: "100",
-      lifespanSeconds: 3600, // 1 hour in SECONDS (not nanoseconds!)
+      lifespan: { seconds: 3600n, nanos: 0 }, // 1 hour
     });
     console.log(`  ${result.success ? "SUCCESS" : "FAILED"}: ${result.txHash}`);
   } catch (error) {
@@ -281,24 +278,24 @@ await client.exchange.getOrders({ orderer: client.address });
 License Transactions
 --------------------
 await client.mintLicense({ to, uri, reason? });
-await client.batchMintLicenses({ recipients: [{ to, uri }], reason? });
+await client.batchMintLicense({ recipients: [{ to, uri }], reason? });
 await client.transferLicense({ licenseId, to, reason? });
 await client.burnLicense({ licenseId, reason? });
 await client.revokeLicense({ licenseId, reason? });
-await client.setTokenUri({ licenseId, uri });
+await client.setTokenURI({ licenseId, uri });
 await client.approveMember({ member });
-await client.batchApproveMembers({ members });
+await client.batchApproveMember({ members });
 await client.revokeMember({ member });
-await client.batchRevokeMembers({ members });
-await client.setKycApprovers({ add?, remove? });
+await client.batchRevokeMember({ members });
+await client.setKYCApprovers({ add?, remove? });
 await client.setMinters({ add?, remove? });
 
 Miner Transactions
 ------------------
-await client.delegateLicenses({ licenseIds, operator });
-await client.undelegateLicenses({ licenseIds });
-await client.redelegateLicenses({ licenseIds, newOperator });
-await client.setVrfKey({ vrfPubkey, possessionProof, nonce });
+await client.delegateMining({ licenseIds, operator });
+await client.cancelMiningDelegation({ licenseIds });
+await client.redelegateMining({ licenseIds, newOperator });
+await client.setOwnerVrfKey({ vrfPubkey, possessionProof, nonce });
 await client.submitWork({ licenseId, epoch, y, proof, nonce });
 await client.batchSubmitWork({ submissions });
 await client.registerOperator({ commissionRate, commissionRecipient? });
@@ -312,7 +309,7 @@ await client.placeLimitOrder({
   isBuy,
   price,
   quantity,
-  lifespanSeconds,  // In SECONDS (auto-converted to nanoseconds)
+  lifespan,  // protobuf Duration { seconds, nanos }
 });
 await client.placeMarketOrder({ marketId, isBuy, quantity });
 await client.cancelOrder({ orderId });

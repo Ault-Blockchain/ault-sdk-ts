@@ -44,7 +44,7 @@ const licenses = await client.license.getOwnedBy(client.address);
 const epoch = await client.miner.getCurrentEpoch();
 
 // Execute transactions (no message building required!)
-const result = await client.delegateLicenses({
+const result = await client.delegateMining({
   licenseIds: [1, 2, 3],        // accepts numbers, strings, or bigints
   operator: '0xOperator...',    // accepts 0x or ault1 format
 });
@@ -208,7 +208,7 @@ await client.mintLicense({
 });
 
 // Batch mint
-await client.batchMintLicenses({
+await client.batchMintLicense({
   recipients: [
     { to: '0xAddr1...', uri: 'https://example.com/1.json' },
     { to: '0xAddr2...', uri: 'https://example.com/2.json' },
@@ -228,54 +228,56 @@ await client.revokeLicense({ licenseId: 123 });
 // KYC management
 await client.approveMember({ member: '0x...' });
 await client.revokeMember({ member: '0x...' });
-await client.batchApproveMembers({ members: ['0x...', '0x...'] });
+await client.batchApproveMember({ members: ['0x...', '0x...'] });
 
 // Admin functions
 await client.setMinters({ add: ['0x...'], remove: [] });
-await client.setKycApprovers({ add: ['0x...'], remove: [] });
+await client.setKYCApprovers({ add: ['0x...'], remove: [] });
 ```
 
 ### Miner Transactions
 
 ```typescript
+import { base64ToBytes } from 'ault-sdk-ts';
+
 // Delegate licenses to an operator
-await client.delegateLicenses({
+await client.delegateMining({
   licenseIds: [1, 2, 3],          // bigint[], number[], or string[]
   operator: '0xOperator...',
 });
 
-// Undelegate
-await client.undelegateLicenses({
+// Cancel mining delegation
+await client.cancelMiningDelegation({
   licenseIds: [1, 2, 3],
 });
 
 // Redelegate to a new operator
-await client.redelegateLicenses({
+await client.redelegateMining({
   licenseIds: [1, 2, 3],
   newOperator: '0xNewOperator...',
 });
 
-// Set VRF key
-await client.setVrfKey({
-  vrfPubkey: 'base64...',
-  possessionProof: 'base64...',
-  nonce: 1,
+// Set VRF key (Uint8Array)
+await client.setOwnerVrfKey({
+  vrfPubkey: base64ToBytes('base64...'),
+  possessionProof: base64ToBytes('base64...'),
+  nonce: 1n,
 });
 
-// Submit mining work
+// Submit mining work (Uint8Array)
 await client.submitWork({
   licenseId: 123,
   epoch: 456,
-  y: 'base64...',
-  proof: 'base64...',
-  nonce: 'base64...',
+  y: base64ToBytes('base64...'),
+  proof: base64ToBytes('base64...'),
+  nonce: base64ToBytes('base64...'),
 });
 
 // Batch submit work
 await client.batchSubmitWork({
   submissions: [
-    { licenseId: 1, epoch: 100, y: '...', proof: '...', nonce: '...' },
-    { licenseId: 2, epoch: 100, y: '...', proof: '...', nonce: '...' },
+    { licenseId: 1, epoch: 100, y: base64ToBytes('...'), proof: base64ToBytes('...'), nonce: base64ToBytes('...') },
+    { licenseId: 2, epoch: 100, y: base64ToBytes('...'), proof: base64ToBytes('...'), nonce: base64ToBytes('...') },
   ],
 });
 
@@ -294,14 +296,15 @@ await client.updateOperatorInfo({
 ### Exchange Transactions
 
 ```typescript
+import { base64ToBytes } from 'ault-sdk-ts';
+
 // Place a limit order
-// Note: lifespanSeconds is in SECONDS (auto-converted to nanoseconds)
 await client.placeLimitOrder({
   marketId: 1,
   isBuy: true,
   price: '1.5',
   quantity: '100',
-  lifespanSeconds: 3600,          // 1 hour
+  lifespan: { seconds: 3600n, nanos: 0 }, // 1 hour
 });
 
 // Place a market order
@@ -312,7 +315,7 @@ await client.placeMarketOrder({
 });
 
 // Cancel orders
-await client.cancelOrder({ orderId: 'base64OrderId...' });
+await client.cancelOrder({ orderId: base64ToBytes('base64OrderId...') });
 await client.cancelAllOrders({ marketId: 1 });
 
 // Create a market
@@ -327,7 +330,7 @@ await client.createMarket({
 All transaction methods accept optional `gasLimit` and `memo`:
 
 ```typescript
-await client.delegateLicenses({
+await client.delegateMining({
   licenseIds: [1, 2, 3],
   operator: '0x...',
   gasLimit: '300000',             // Override default gas limit
@@ -370,10 +373,10 @@ const typedData = lowLevel.eip712.buildTypedData(context, msgs);
 // Use the msg namespace directly
 import { msg } from 'ault-sdk-ts';
 
-const delegateMsg = msg.miner.delegate({
+const delegateMsg = msg.miner.delegateMining({
   owner: 'ault1...',
   operator: 'ault1...',
-  license_ids: [1n, 2n, 3n],
+  licenseIds: [1n, 2n, 3n],
 });
 
 // Sign and broadcast manually
@@ -403,10 +406,10 @@ const result = await signAndBroadcastEip712({
   signer: mySigner,
   signerAddress: 'ault1...',
   msgs: [
-    msg.miner.delegate({
+    msg.miner.delegateMining({
       owner: 'ault1...',
       operator: 'ault1...',
-      license_ids: [1n, 2n, 3n],
+      licenseIds: [1n, 2n, 3n],
     }),
   ],
 });

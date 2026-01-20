@@ -48,9 +48,9 @@ export function base64ToBytes(base64: string): Uint8Array {
   throw new Error("No base64 decoder available in this runtime.");
 }
 
-export function isBase64String(value: string): boolean {
+export function isBase64String(value: string, allowEmpty = false): boolean {
   if (value === "") {
-    return true;
+    return allowEmpty;
   }
   return BASE64_PATTERN.test(value);
 }

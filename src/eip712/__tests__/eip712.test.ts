@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { EIP712_MSG_TYPES } from "../registry";
 import { validateEip712FieldOrder } from "../field-order";
-import { msg, buildEip712TypedData, type Eip712TxContext } from "../builder";
-import { asBase64String } from "../../core/base64";
+import { msg, buildEip712TypedData, type AnyEip712Msg, type Eip712TxContext } from "../builder";
+import { base64ToBytes } from "../../core/base64";
 
 // ============================================================================
 // Field Ordering Tests - Critical for Cosmos EVM signing
@@ -31,10 +31,7 @@ describe("EIP-712 Field Ordering", () => {
         const names = nestedFields.map((f) => f.name);
         const sorted = [...names].sort((a, b) => b.localeCompare(a));
 
-        expect(
-          names,
-          `${typeUrl} nested type '${nestedName}' should be in descending order`,
-        ).toEqual(sorted);
+        expect(names, `${typeUrl} nested type '${nestedName}' should be in descending order`).toEqual(sorted);
       }
     }
   });
@@ -59,7 +56,7 @@ describe("EIP-712 Field Ordering", () => {
 describe("msg builders", () => {
   describe("msg.license", () => {
     it("mint creates correct message", () => {
-      const result = msg.license.mint({
+      const result = msg.license.mintLicense({
         minter: "ault1minter",
         to: "ault1recipient",
         uri: "ipfs://hash",
@@ -76,7 +73,7 @@ describe("msg builders", () => {
     });
 
     it("batchMint creates correct message with arrays", () => {
-      const result = msg.license.batchMint({
+      const result = msg.license.batchMintLicense({
         minter: "ault1minter",
         to: ["ault1a", "ault1b"],
         uri: ["ipfs://1", "ipfs://2"],
@@ -89,34 +86,34 @@ describe("msg builders", () => {
     });
 
     it("transfer creates correct message", () => {
-      const result = msg.license.transfer({
+      const result = msg.license.transferLicense({
         from: "ault1from",
         to: "ault1to",
-        license_id: 123n,
+        licenseId: 123n,
         reason: "transfer reason",
       });
 
       expect(result.typeUrl).toBe("/ault.license.v1.MsgTransferLicense");
-      expect(result.value.license_id).toBe(123n);
+      expect(result.value.licenseId).toBe(123n);
     });
 
     it("setParams creates correct message with nested params", () => {
       const params = {
-        class_name: "Ault License",
-        class_symbol: "AULT",
-        base_token_uri: "ipfs://",
-        minting_paused: false,
-        supply_cap: 1000000n,
-        allow_metadata_update: true,
-        admin_can_revoke: true,
-        admin_can_burn: false,
-        max_batch_mint_size: 100n,
-        transfer_unlock_days: 30n,
-        enable_transfers: true,
-        minter_allowed_msgs: [],
-        kyc_approver_allowed_msgs: [],
-        free_max_gas_limit: 200000n,
-        max_voting_power_per_address: 100n,
+        className: "Ault License",
+        classSymbol: "AULT",
+        baseTokenUri: "ipfs://",
+        mintingPaused: false,
+        supplyCap: 1000000n,
+        allowMetadataUpdate: true,
+        adminCanRevoke: true,
+        adminCanBurn: false,
+        maxBatchMintSize: 100,
+        transferUnlockDays: 30,
+        enableTransfers: true,
+        minterAllowedMsgs: [],
+        kycApproverAllowedMsgs: [],
+        freeMaxGasLimit: 200000n,
+        maxVotingPowerPerAddress: 100n,
       };
 
       const result = msg.license.setParams({ authority: "ault1gov", params });
@@ -128,30 +125,30 @@ describe("msg builders", () => {
 
   describe("msg.miner", () => {
     it("delegate creates correct message", () => {
-      const result = msg.miner.delegate({
+      const result = msg.miner.delegateMining({
         owner: "ault1owner",
-        license_ids: [1n, 2n, 3n],
+        licenseIds: [1n, 2n, 3n],
         operator: "ault1operator",
       });
 
       expect(result.typeUrl).toBe("/ault.miner.v1.MsgDelegateMining");
-      expect(result.value.license_ids).toEqual([1n, 2n, 3n]);
+      expect(result.value.licenseIds).toEqual([1n, 2n, 3n]);
     });
 
     it("submitWork creates correct message", () => {
       const result = msg.miner.submitWork({
         submitter: "ault1submitter",
-        license_id: 42n,
+        licenseId: 42n,
         epoch: 100n,
-        y: asBase64String("eQ=="),
-        proof: asBase64String("cHJvb2Y="),
-        nonce: asBase64String("bm9uY2U="),
+        y: base64ToBytes("eQ=="),
+        proof: base64ToBytes("cHJvb2Y="),
+        nonce: base64ToBytes("bm9uY2U="),
       });
 
       expect(result.typeUrl).toBe("/ault.miner.v1.MsgSubmitWork");
       expect(result.value).toMatchObject({
         submitter: "ault1submitter",
-        license_id: 42n,
+        licenseId: 42n,
         epoch: 100n,
       });
     });
@@ -161,18 +158,18 @@ describe("msg builders", () => {
         submitter: "ault1submitter",
         submissions: [
           {
-            license_id: 1n,
+            licenseId: 1n,
             epoch: 100n,
-            y: asBase64String("eQ=="),
-            proof: asBase64String("cA=="),
-            nonce: asBase64String("bg=="),
+            y: base64ToBytes("eQ=="),
+            proof: base64ToBytes("cA=="),
+            nonce: base64ToBytes("bg=="),
           },
           {
-            license_id: 2n,
+            licenseId: 2n,
             epoch: 100n,
-            y: asBase64String("eQ=="),
-            proof: asBase64String("cA=="),
-            nonce: asBase64String("bg=="),
+            y: base64ToBytes("eQ=="),
+            proof: base64ToBytes("cA=="),
+            nonce: base64ToBytes("bg=="),
           },
         ],
       });
@@ -184,8 +181,8 @@ describe("msg builders", () => {
     it("registerOperator creates correct message", () => {
       const result = msg.miner.registerOperator({
         operator: "ault1op",
-        commission_rate: 10n,
-        commission_recipient: "ault1recipient",
+        commissionRate: 10,
+        commissionRecipient: "ault1recipient",
       });
 
       expect(result.typeUrl).toBe("/ault.miner.v1.MsgRegisterOperator");
@@ -196,33 +193,33 @@ describe("msg builders", () => {
     it("placeLimitOrder creates correct message", () => {
       const result = msg.exchange.placeLimitOrder({
         sender: "ault1trader",
-        market_id: 1n,
-        is_buy: true,
+        marketId: 1n,
+        isBuy: true,
         price: "100.50",
         quantity: "10",
-        lifespan: 3600000000000n,
+        lifespan: { seconds: 3600n, nanos: 0 },
       });
 
       expect(result.typeUrl).toBe("/ault.exchange.v1beta1.MsgPlaceLimitOrder");
-      expect(result.value.is_buy).toBe(true);
+      expect(result.value.isBuy).toBe(true);
     });
 
     it("placeMarketOrder creates correct message", () => {
       const result = msg.exchange.placeMarketOrder({
         sender: "ault1trader",
-        market_id: 1n,
-        is_buy: false,
+        marketId: 1n,
+        isBuy: false,
         quantity: "5",
       });
 
       expect(result.typeUrl).toBe("/ault.exchange.v1beta1.MsgPlaceMarketOrder");
-      expect(result.value.is_buy).toBe(false);
+      expect(result.value.isBuy).toBe(false);
     });
 
     it("cancelAllOrders creates correct message", () => {
       const result = msg.exchange.cancelAllOrders({
         sender: "ault1trader",
-        market_id: 1n,
+        marketId: 1n,
       });
 
       expect(result.typeUrl).toBe("/ault.exchange.v1beta1.MsgCancelAllOrders");
@@ -237,8 +234,8 @@ describe("msg builders", () => {
 describe("buildEip712TypedData", () => {
   const baseContext: Eip712TxContext = {
     chainId: "ault_10904-1",
-    accountNumber: 42,
-    sequence: 5,
+    accountNumber: "42",
+    sequence: "5",
     fee: {
       amount: "5000000000000000",
       denom: "aault",
@@ -248,7 +245,7 @@ describe("buildEip712TypedData", () => {
   };
 
   it("builds valid typed data for single message", () => {
-    const message = msg.license.mint({
+    const message = msg.license.mintLicense({
       minter: "ault1minter",
       to: "ault1to",
       uri: "ipfs://test",
@@ -266,9 +263,9 @@ describe("buildEip712TypedData", () => {
   });
 
   it("includes message data in the typed data message", () => {
-    const message = msg.miner.delegate({
+    const message = msg.miner.delegateMining({
       owner: "ault1owner",
-      license_ids: [1n, 2n],
+      licenseIds: [1n, 2n],
       operator: "ault1op",
     });
 
@@ -283,8 +280,8 @@ describe("buildEip712TypedData", () => {
 
   it("handles multiple messages", () => {
     const messages = [
-      msg.license.mint({ minter: "m", to: "t", uri: "u", reason: "r" }),
-      msg.license.mint({ minter: "m2", to: "t2", uri: "u2", reason: "r2" }),
+      msg.license.mintLicense({ minter: "m", to: "t", uri: "u", reason: "r" }),
+      msg.license.mintLicense({ minter: "m2", to: "t2", uri: "u2", reason: "r2" }),
     ];
 
     const typedData = buildEip712TypedData(baseContext, messages);
@@ -298,15 +295,13 @@ describe("buildEip712TypedData", () => {
   });
 
   it("throws for unknown message type", () => {
-    const badMessage = { typeUrl: "/unknown.msg.Type", value: {} };
+    const badMessage = { typeUrl: "/unknown.msg.Type", value: {} } as unknown as AnyEip712Msg;
 
-    expect(() => buildEip712TypedData(baseContext, [badMessage])).toThrow(
-      "Unknown message type: /unknown.msg.Type",
-    );
+    expect(() => buildEip712TypedData(baseContext, [badMessage])).toThrow("Unknown message type: /unknown.msg.Type");
   });
 
   it("extracts EVM chain ID from Cosmos chain ID", () => {
-    const message = msg.license.mint({ minter: "m", to: "t", uri: "u", reason: "r" });
+    const message = msg.license.mintLicense({ minter: "m", to: "t", uri: "u", reason: "r" });
 
     const typedData = buildEip712TypedData({ ...baseContext, chainId: "ault_12345-1" }, [message]);
 
@@ -314,7 +309,7 @@ describe("buildEip712TypedData", () => {
   });
 
   it("uses provided EVM chain ID override", () => {
-    const message = msg.license.mint({ minter: "m", to: "t", uri: "u", reason: "r" });
+    const message = msg.license.mintLicense({ minter: "m", to: "t", uri: "u", reason: "r" });
 
     const typedData = buildEip712TypedData(baseContext, [message], 99999);
 
@@ -326,11 +321,11 @@ describe("buildEip712TypedData", () => {
       submitter: "ault1submitter",
       submissions: [
         {
-          license_id: 1n,
+          licenseId: 1n,
           epoch: 100n,
-          y: asBase64String("eQ=="),
-          proof: asBase64String("cA=="),
-          nonce: asBase64String("bg=="),
+          y: base64ToBytes("eQ=="),
+          proof: base64ToBytes("cA=="),
+          nonce: base64ToBytes("bg=="),
         },
       ],
     });
@@ -354,7 +349,7 @@ describe("buildEip712TypedData", () => {
   });
 
   it("includes proper fee structure", () => {
-    const message = msg.license.mint({ minter: "m", to: "t", uri: "u", reason: "r" });
+    const message = msg.license.mintLicense({ minter: "m", to: "t", uri: "u", reason: "r" });
     const typedData = buildEip712TypedData(baseContext, [message]);
 
     expect(typedData.message.fee).toEqual({
@@ -401,10 +396,7 @@ describe("EIP712_MSG_TYPES registry", () => {
         expect(config.nestedTypes, `${typeUrl} has NESTED fields but no nestedTypes`).toBeDefined();
 
         for (const field of nestedFields) {
-          expect(
-            config.nestedTypes![field.name],
-            `${typeUrl} missing nested type for ${field.name}`,
-          ).toBeDefined();
+          expect(config.nestedTypes![field.name], `${typeUrl} missing nested type for ${field.name}`).toBeDefined();
         }
       }
     }

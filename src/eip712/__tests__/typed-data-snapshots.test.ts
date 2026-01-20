@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildEip712TypedData, msg, type Eip712TxContext } from "../builder";
-import { asBase64String } from "../../core/base64";
+import { base64ToBytes } from "../../core/base64";
 
 // ============================================================================
 // Typed Data Snapshot Tests
@@ -8,8 +8,8 @@ import { asBase64String } from "../../core/base64";
 
 const baseContext: Eip712TxContext = {
   chainId: "ault_10904-1",
-  accountNumber: 42,
-  sequence: 5,
+  accountNumber: "42",
+  sequence: "5",
   fee: {
     amount: "5000000000000000",
     denom: "aault",
@@ -21,7 +21,7 @@ const baseContext: Eip712TxContext = {
 describe("Typed Data Snapshots", () => {
   describe("Domain structure", () => {
     it("domain is correctly structured", () => {
-      const message = msg.license.mint({
+      const message = msg.license.mintLicense({
         minter: "ault1minter",
         to: "ault1to",
         uri: "ipfs://test",
@@ -41,28 +41,24 @@ describe("Typed Data Snapshots", () => {
     });
 
     it("extracts chain ID from different formats", () => {
-      const message = msg.license.mint({
+      const message = msg.license.mintLicense({
         minter: "m",
         to: "t",
         uri: "u",
         reason: "r",
       });
 
-      const typedData1 = buildEip712TypedData({ ...baseContext, chainId: "ault_12345-1" }, [
-        message,
-      ]);
+      const typedData1 = buildEip712TypedData({ ...baseContext, chainId: "ault_12345-1" }, [message]);
       expect(typedData1.domain.chainId).toBe(12345);
 
-      const typedData2 = buildEip712TypedData({ ...baseContext, chainId: "ault_99999-2" }, [
-        message,
-      ]);
+      const typedData2 = buildEip712TypedData({ ...baseContext, chainId: "ault_99999-2" }, [message]);
       expect(typedData2.domain.chainId).toBe(99999);
     });
   });
 
   describe("Base types structure", () => {
     it("contains all required base types", () => {
-      const message = msg.license.mint({
+      const message = msg.license.mintLicense({
         minter: "ault1minter",
         to: "ault1to",
         uri: "ipfs://test",
@@ -125,7 +121,7 @@ describe("Typed Data Snapshots", () => {
 
   describe("License message snapshots", () => {
     it("MsgMintLicense typed data", () => {
-      const message = msg.license.mint({
+      const message = msg.license.mintLicense({
         minter: "ault1minter",
         to: "ault1recipient",
         uri: "ipfs://QmTest",
@@ -176,7 +172,7 @@ describe("Typed Data Snapshots", () => {
     });
 
     it("MsgBatchMintLicense typed data with arrays", () => {
-      const message = msg.license.batchMint({
+      const message = msg.license.batchMintLicense({
         minter: "ault1minter",
         to: ["ault1a", "ault1b", "ault1c"],
         uri: ["ipfs://1", "ipfs://2", "ipfs://3"],
@@ -207,10 +203,10 @@ describe("Typed Data Snapshots", () => {
     });
 
     it("MsgTransferLicense typed data", () => {
-      const message = msg.license.transfer({
+      const message = msg.license.transferLicense({
         from: "ault1from",
         to: "ault1to",
-        license_id: 123n,
+        licenseId: 123n,
         reason: "Transfer",
       });
       const typedData = buildEip712TypedData(baseContext, [message]);
@@ -231,9 +227,9 @@ describe("Typed Data Snapshots", () => {
 
   describe("Miner message snapshots", () => {
     it("MsgDelegateMining typed data", () => {
-      const message = msg.miner.delegate({
+      const message = msg.miner.delegateMining({
         owner: "ault1owner",
-        license_ids: [1n, 2n, 3n],
+        licenseIds: [1n, 2n, 3n],
         operator: "ault1operator",
       });
       const typedData = buildEip712TypedData(baseContext, [message]);
@@ -276,18 +272,18 @@ describe("Typed Data Snapshots", () => {
         submitter: "ault1submitter",
         submissions: [
           {
-            license_id: 1n,
+            licenseId: 1n,
             epoch: 100n,
-            y: asBase64String("eQ=="),
-            proof: asBase64String("cA=="),
-            nonce: asBase64String("bg=="),
+            y: base64ToBytes("eQ=="),
+            proof: base64ToBytes("cA=="),
+            nonce: base64ToBytes("bg=="),
           },
           {
-            license_id: 2n,
+            licenseId: 2n,
             epoch: 100n,
-            y: asBase64String("eQ=="),
-            proof: asBase64String("cA=="),
-            nonce: asBase64String("bg=="),
+            y: base64ToBytes("eQ=="),
+            proof: base64ToBytes("cA=="),
+            nonce: base64ToBytes("bg=="),
           },
         ],
       });
@@ -324,8 +320,8 @@ describe("Typed Data Snapshots", () => {
     it("MsgRegisterOperator typed data", () => {
       const message = msg.miner.registerOperator({
         operator: "ault1op",
-        commission_rate: 10n,
-        commission_recipient: "ault1recipient",
+        commissionRate: 10,
+        commissionRecipient: "ault1recipient",
       });
       const typedData = buildEip712TypedData(baseContext, [message]);
 
@@ -346,11 +342,11 @@ describe("Typed Data Snapshots", () => {
     it("MsgPlaceLimitOrder typed data", () => {
       const message = msg.exchange.placeLimitOrder({
         sender: "ault1trader",
-        market_id: 1n,
-        is_buy: true,
+        marketId: 1n,
+        isBuy: true,
         price: "100.50",
         quantity: "10",
-        lifespan: 3600000000000n,
+        lifespan: { seconds: 3600n, nanos: 0 },
       });
       const typedData = buildEip712TypedData(baseContext, [message]);
 
@@ -401,8 +397,8 @@ describe("Typed Data Snapshots", () => {
     it("MsgPlaceMarketOrder typed data", () => {
       const message = msg.exchange.placeMarketOrder({
         sender: "ault1trader",
-        market_id: 1n,
-        is_buy: false,
+        marketId: 1n,
+        isBuy: false,
         quantity: "5",
       });
       const typedData = buildEip712TypedData(baseContext, [message]);
@@ -424,8 +420,8 @@ describe("Typed Data Snapshots", () => {
   describe("Multi-message transactions", () => {
     it("two messages of the same type", () => {
       const messages = [
-        msg.license.mint({ minter: "m", to: "t1", uri: "u1", reason: "r1" }),
-        msg.license.mint({ minter: "m", to: "t2", uri: "u2", reason: "r2" }),
+        msg.license.mintLicense({ minter: "m", to: "t1", uri: "u1", reason: "r1" }),
+        msg.license.mintLicense({ minter: "m", to: "t2", uri: "u2", reason: "r2" }),
       ];
       const typedData = buildEip712TypedData(baseContext, [messages[0], messages[1]]);
 
@@ -439,8 +435,8 @@ describe("Typed Data Snapshots", () => {
 
     it("two messages of different types", () => {
       const messages = [
-        msg.license.mint({ minter: "m", to: "t", uri: "u", reason: "r" }),
-        msg.miner.delegate({ owner: "o", license_ids: [1n], operator: "op" }),
+        msg.license.mintLicense({ minter: "m", to: "t", uri: "u", reason: "r" }),
+        msg.miner.delegateMining({ owner: "o", licenseIds: [1n], operator: "op" }),
       ];
       const typedData = buildEip712TypedData(baseContext, [messages[0], messages[1]]);
 
@@ -455,7 +451,7 @@ describe("Typed Data Snapshots", () => {
         ...baseContext,
         memo: "Test memo",
       };
-      const message = msg.license.mint({
+      const message = msg.license.mintLicense({
         minter: "m",
         to: "t",
         uri: "u",
@@ -469,10 +465,10 @@ describe("Typed Data Snapshots", () => {
     it("formats account_number and sequence as strings", () => {
       const context = {
         ...baseContext,
-        accountNumber: 123,
-        sequence: 456,
+        accountNumber: "123",
+        sequence: "456",
       };
-      const message = msg.license.mint({
+      const message = msg.license.mintLicense({
         minter: "m",
         to: "t",
         uri: "u",
@@ -485,7 +481,7 @@ describe("Typed Data Snapshots", () => {
     });
 
     it("includes correct fee structure", () => {
-      const message = msg.license.mint({
+      const message = msg.license.mintLicense({
         minter: "m",
         to: "t",
         uri: "u",
@@ -525,17 +521,15 @@ describe("Typed Data Snapshots", () => {
   describe("Type deduplication", () => {
     it("reuses identical type definitions", () => {
       const messages = [
-        msg.license.mint({ minter: "m1", to: "t1", uri: "u1", reason: "r1" }),
-        msg.license.mint({ minter: "m2", to: "t2", uri: "u2", reason: "r2" }),
+        msg.license.mintLicense({ minter: "m1", to: "t1", uri: "u1", reason: "r1" }),
+        msg.license.mintLicense({ minter: "m2", to: "t2", uri: "u2", reason: "r2" }),
       ];
       const typedData = buildEip712TypedData(baseContext, [messages[0], messages[1]]);
 
       // Both messages should use the same TypeValue since they have identical field structure
       expect(typedData.types.TypeValue0).toBeDefined();
       // The second message should reuse TypeValue0, not create TypeValue1
-      const typeCount = Object.keys(typedData.types).filter((k) =>
-        k.startsWith("TypeValue"),
-      ).length;
+      const typeCount = Object.keys(typedData.types).filter((k) => k.startsWith("TypeValue")).length;
       expect(typeCount).toBe(1);
     });
   });

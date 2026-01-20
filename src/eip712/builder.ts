@@ -7,7 +7,7 @@ import {
   type WorkSubmission,
   type MarketParamUpdate,
 } from "./registry";
-import type { Base64String } from "../core/base64";
+import { bytesToBase64 } from "../core/base64";
 import {
   EIP712_DOMAIN_TYPE,
   TX_BASE_FIELDS,
@@ -16,6 +16,7 @@ import {
   type Eip712Field,
   type Eip712TypedData,
 } from "./types";
+import type { AnyEip712Msg } from "./msg.generated";
 import { parseEvmChainIdFromCosmosChainId } from "../utils/chain-id";
 import { validateEip712FieldOrderInDev } from "./field-order";
 
@@ -23,8 +24,8 @@ validateEip712FieldOrderInDev();
 
 export interface Eip712TxContext {
   chainId: string;
-  accountNumber: number;
-  sequence: number;
+  accountNumber: string;
+  sequence: string;
   fee: {
     amount: string;
     denom: string;
@@ -33,14 +34,12 @@ export interface Eip712TxContext {
   memo: string;
 }
 
-export interface Eip712Msg<T = Record<string, unknown>> {
-  typeUrl: string;
-  value: T;
+export interface Eip712Msg<TValue = unknown, TTypeUrl extends string = string> {
+  typeUrl: TTypeUrl;
+  value: TValue;
 }
 
 // Re-export types for convenience
-export type { Base64String } from "../core/base64";
-export { asBase64String } from "../core/base64";
 export type { LicenseParams, MinerParams, WorkSubmission, MarketParamUpdate };
 
 // ============================================================================
@@ -115,6 +114,122 @@ function resolveValueFields(
   });
 }
 
+function snakeToCamel(value: string): string {
+  return value.replace(/_([a-z0-9])/g, (_, next) => String(next).toUpperCase());
+}
+
+function normalizeBinaryValue(value: unknown): unknown {
+  if (value instanceof Uint8Array) {
+    return bytesToBase64(value);
+  }
+  return value;
+}
+
+function toBigIntLike(value: unknown, label: string): bigint {
+  if (typeof value === "bigint") {
+    return value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    if (!Number.isInteger(value)) {
+      throw new Error(`${label} must be an integer.`);
+    }
+    return BigInt(value);
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    return BigInt(value);
+  }
+  throw new Error(`${label} must be a bigint, number, or decimal string.`);
+}
+
+function durationToNanosecondsString(value: unknown, fieldName: string): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Duration field "${fieldName}" must be a protobuf Duration object.`);
+  }
+  const record = value as { seconds?: unknown; nanos?: unknown };
+  if (record.seconds === undefined && record.nanos === undefined) {
+    throw new Error(`Duration field "${fieldName}" must include seconds or nanos.`);
+  }
+  const seconds = toBigIntLike(record.seconds ?? 0n, `${fieldName}.seconds`);
+  const nanos = toBigIntLike(record.nanos ?? 0, `${fieldName}.nanos`);
+  if (nanos < -999_999_999n || nanos > 999_999_999n) {
+    throw new Error(`Duration field "${fieldName}.nanos" must be between -999999999 and 999999999.`);
+  }
+  if (seconds > 0n && nanos < 0n) {
+    throw new Error(`Duration field "${fieldName}.nanos" must be >= 0 when seconds is positive.`);
+  }
+  if (seconds < 0n && nanos > 0n) {
+    throw new Error(`Duration field "${fieldName}.nanos" must be <= 0 when seconds is negative.`);
+  }
+  return (seconds * 1_000_000_000n + nanos).toString();
+}
+
+function mapValueToAmino(
+  value: unknown,
+  fields: readonly Eip712Field[],
+  nestedTypes?: Record<string, readonly Eip712Field[]>,
+  durationFields?: readonly string[],
+): Record<string, unknown> {
+  const record =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  const normalized: Record<string, unknown> = {};
+  const durationSet = durationFields ? new Set(durationFields) : undefined;
+
+  for (const field of fields) {
+    const camelKey = snakeToCamel(field.name);
+    const raw = record[camelKey] ?? record[field.name];
+    if (field.type.startsWith("NESTED")) {
+      const nestedFields = nestedTypes?.[field.name];
+      if (!nestedFields) {
+        throw new Error(`Missing nested type definition for field: ${field.name}`);
+      }
+      if (field.type.endsWith("[]")) {
+        if (Array.isArray(raw)) {
+          normalized[field.name] = raw.map((item) =>
+            mapValueToAmino(item, nestedFields, nestedTypes, durationFields),
+          );
+        } else {
+          normalized[field.name] = raw;
+        }
+      } else {
+        normalized[field.name] = mapValueToAmino(raw, nestedFields, nestedTypes, durationFields);
+      }
+      continue;
+    }
+
+    if (durationSet?.has(field.name)) {
+      if (raw === undefined) {
+        throw new Error(`Duration field "${field.name}" is required.`);
+      }
+      normalized[field.name] = durationToNanosecondsString(raw, field.name);
+      continue;
+    }
+
+    if (raw === undefined) {
+      continue;
+    }
+
+    if (field.type === "string[]") {
+      if (Array.isArray(raw)) {
+        normalized[field.name] = raw.map((item) => normalizeBinaryValue(item));
+      } else {
+        normalized[field.name] = raw;
+      }
+      continue;
+    }
+
+    if (field.type === "string") {
+      normalized[field.name] = normalizeBinaryValue(raw);
+      continue;
+    }
+
+    normalized[field.name] = raw;
+  }
+
+  return normalized;
+}
+
 function normalizeStringValue(value: unknown): unknown {
   if (typeof value === "bigint" || typeof value === "number") {
     return value.toString();
@@ -181,7 +296,7 @@ function normalizeTypedDataValue(
 
 export function buildEip712TypedData(
   context: Eip712TxContext,
-  msgs: Eip712Msg[],
+  msgs: AnyEip712Msg[],
   evmChainId?: number,
 ): Eip712TypedData {
   if (msgs.length === 0) {
@@ -218,7 +333,13 @@ export function buildEip712TypedData(
     }
 
     const msgField = `msg${index}`;
-    const valueTypeFields = resolveValueFields(types, msgConfig, msg.value);
+    const aminoValue = mapValueToAmino(
+      msg.value,
+      msgConfig.valueFields,
+      msgConfig.nestedTypes,
+      msgConfig.durationFields,
+    );
+    const valueTypeFields = resolveValueFields(types, msgConfig, aminoValue);
     const valueTypeName = addTypeWithDedup(types, "TypeValue", valueTypeFields);
 
     const msgTypeFields: Eip712Field[] = [
@@ -231,7 +352,7 @@ export function buildEip712TypedData(
 
     message[msgField] = {
       type: msgConfig.aminoType,
-      value: normalizeTypedDataValue(msg.value, msgConfig.valueFields, msgConfig.nestedTypes),
+      value: normalizeTypedDataValue(aminoValue, msgConfig.valueFields, msgConfig.nestedTypes),
     };
   });
 
@@ -250,140 +371,8 @@ export function buildEip712TypedData(
 }
 
 // ============================================================================
-// Generic msg builder - use this for any message type
+// Generated message builders
 // ============================================================================
 
-function buildMsg<T extends Record<string, unknown>>(typeUrl: string, value: T): Eip712Msg<T> {
-  return { typeUrl, value };
-}
-
-// ============================================================================
-// Type-safe message builders organized by module
-// ============================================================================
-
-export const msg = {
-  // License module
-  license: {
-    mint: (v: { minter: string; to: string; uri: string; reason: string }) =>
-      buildMsg("/ault.license.v1.MsgMintLicense", v),
-
-    batchMint: (v: { minter: string; to: string[]; uri: string[]; reason: string }) =>
-      buildMsg("/ault.license.v1.MsgBatchMintLicense", v),
-
-    approveMember: (v: { authority: string; member: string }) =>
-      buildMsg("/ault.license.v1.MsgApproveMember", v),
-
-    revokeMember: (v: { authority: string; member: string }) =>
-      buildMsg("/ault.license.v1.MsgRevokeMember", v),
-
-    batchApproveMember: (v: { authority: string; members: string[] }) =>
-      buildMsg("/ault.license.v1.MsgBatchApproveMember", v),
-
-    batchRevokeMember: (v: { authority: string; members: string[] }) =>
-      buildMsg("/ault.license.v1.MsgBatchRevokeMember", v),
-
-    revoke: (v: { authority: string; id: bigint; reason: string }) =>
-      buildMsg("/ault.license.v1.MsgRevokeLicense", v),
-
-    burn: (v: { authority: string; id: bigint; reason: string }) =>
-      buildMsg("/ault.license.v1.MsgBurnLicense", v),
-
-    setTokenUri: (v: { minter: string; id: bigint; uri: string }) =>
-      buildMsg("/ault.license.v1.MsgSetTokenURI", v),
-
-    setMinters: (v: { authority: string; add: string[]; remove: string[] }) =>
-      buildMsg("/ault.license.v1.MsgSetMinters", v),
-
-    setKycApprovers: (v: { authority: string; add: string[]; remove: string[] }) =>
-      buildMsg("/ault.license.v1.MsgSetKYCApprovers", v),
-
-    transfer: (v: { from: string; to: string; license_id: bigint; reason: string }) =>
-      buildMsg("/ault.license.v1.MsgTransferLicense", v),
-
-    setParams: (v: { authority: string; params: LicenseParams }) =>
-      buildMsg("/ault.license.v1.MsgSetParams", v),
-
-    updateParams: (v: { authority: string; params: LicenseParams }) =>
-      buildMsg("/ault.license.v1.MsgUpdateParams", v),
-  },
-
-  // Miner module
-  miner: {
-    setOwnerVrfKey: (v: {
-      owner: string;
-      vrf_pubkey: Base64String;
-      possession_proof: Base64String;
-      nonce: bigint;
-    }) => buildMsg("/ault.miner.v1.MsgSetOwnerVrfKey", v),
-
-    submitWork: (v: {
-      submitter: string;
-      license_id: bigint;
-      epoch: bigint;
-      y: Base64String;
-      proof: Base64String;
-      nonce: Base64String;
-    }) => buildMsg("/ault.miner.v1.MsgSubmitWork", v),
-
-    batchSubmitWork: (v: { submitter: string; submissions: WorkSubmission[] }) =>
-      buildMsg("/ault.miner.v1.MsgBatchSubmitWork", v),
-
-    updateParams: (v: { authority: string; params: MinerParams }) =>
-      buildMsg("/ault.miner.v1.MsgUpdateParams", v),
-
-    registerOperator: (v: {
-      operator: string;
-      commission_rate: bigint;
-      commission_recipient: string;
-    }) => buildMsg("/ault.miner.v1.MsgRegisterOperator", v),
-
-    unregisterOperator: (v: { operator: string }) =>
-      buildMsg("/ault.miner.v1.MsgUnregisterOperator", v),
-
-    updateOperatorInfo: (v: {
-      operator: string;
-      new_commission_rate: bigint;
-      new_commission_recipient: string;
-    }) => buildMsg("/ault.miner.v1.MsgUpdateOperatorInfo", v),
-
-    delegate: (v: { owner: string; license_ids: bigint[]; operator: string }) =>
-      buildMsg("/ault.miner.v1.MsgDelegateMining", v),
-
-    redelegate: (v: { owner: string; license_ids: bigint[]; new_operator: string }) =>
-      buildMsg("/ault.miner.v1.MsgRedelegateMining", v),
-
-    cancelDelegation: (v: { owner: string; license_ids: bigint[] }) =>
-      buildMsg("/ault.miner.v1.MsgCancelMiningDelegation", v),
-  },
-
-  // Exchange module
-  exchange: {
-    createMarket: (v: { sender: string; base_denom: string; quote_denom: string }) =>
-      buildMsg("/ault.exchange.v1beta1.MsgCreateMarket", v),
-
-    placeLimitOrder: (v: {
-      sender: string;
-      market_id: bigint;
-      is_buy: boolean;
-      price: string;
-      quantity: string;
-      lifespan: bigint;
-    }) => buildMsg("/ault.exchange.v1beta1.MsgPlaceLimitOrder", v),
-
-    placeMarketOrder: (v: {
-      sender: string;
-      market_id: bigint;
-      is_buy: boolean;
-      quantity: string;
-    }) => buildMsg("/ault.exchange.v1beta1.MsgPlaceMarketOrder", v),
-
-    cancelOrder: (v: { sender: string; order_id: Base64String }) =>
-      buildMsg("/ault.exchange.v1beta1.MsgCancelOrder", v),
-
-    cancelAllOrders: (v: { sender: string; market_id: bigint }) =>
-      buildMsg("/ault.exchange.v1beta1.MsgCancelAllOrders", v),
-
-    updateMarketParams: (v: { authority: string; updates: MarketParamUpdate[] }) =>
-      buildMsg("/ault.exchange.v1beta1.MsgUpdateMarketParams", v),
-  },
-};
+export { msg } from "./msg.generated";
+export type { AnyEip712Msg } from "./msg.generated";

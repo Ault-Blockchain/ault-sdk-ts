@@ -6,7 +6,7 @@
  *
  * Key improvements over the low-level API:
  * - No message building required
- * - Lifespan in SECONDS (auto-converted to nanoseconds)
+ * - Lifespan uses protobuf Duration
  * - Numbers work for market IDs (no bigints needed)
  *
  * SETUP:
@@ -15,7 +15,7 @@
  * Run with: PRIVATE_KEY=your_private_key npx tsx examples/high-level-exchange-orders.ts
  */
 
-import { createClient, getNetworkConfig } from "../src";
+import { createClient, getNetworkConfig, base64ToBytes } from "../src";
 import { privateKeyToAccount } from "viem/accounts";
 
 const MARKET_ID = 1;
@@ -67,14 +67,13 @@ async function main() {
   console.log("    Lifespan: 1 hour (3600 seconds)");
 
   try {
-    // Note: lifespanSeconds is in SECONDS, not nanoseconds!
-    // The client converts it automatically
+    // Lifespan uses protobuf Duration (seconds + nanos)
     const result = await client.placeLimitOrder({
       marketId: MARKET_ID, // Numbers work! No bigints needed
       isBuy: true,
       price: "1.5",
       quantity: "100",
-      lifespanSeconds: 3600, // 1 hour in SECONDS (not nanoseconds!)
+      lifespan: { seconds: 3600n, nanos: 0 }, // 1 hour
       memo: "Limit order via high-level client",
     });
 
@@ -168,7 +167,7 @@ function showDemoUsage() {
      isBuy: true,
      price: "1.5",
      quantity: "100",
-     lifespanSeconds: 3600,    // SECONDS! (not nanoseconds)
+     lifespan: { seconds: 3600n, nanos: 0 }, // 1 hour
    });
 
 3. Place a market order:
@@ -185,7 +184,7 @@ function showDemoUsage() {
 
 5. Cancel a specific order:
    --------------------------
-   await client.cancelOrder({ orderId: "base64OrderId..." });
+   await client.cancelOrder({ orderId: base64ToBytes("base64OrderId...") });
 
 6. Query orders:
    ---------------
@@ -195,15 +194,15 @@ function showDemoUsage() {
 Compare: Low-Level vs High-Level
 ================================
 
-LOW-LEVEL (old way):
-  const lifespanNanos = BigInt(3600) * BigInt(1_000_000_000);
+Low-level API:
+  const lifespan = { seconds: 3600n, nanos: 0 };
   const orderMsg = msg.exchange.placeLimitOrder({
     sender: signerAddress,
-    market_id: 1n,
-    is_buy: true,
+    marketId: 1n,
+    isBuy: true,
     price: "1.5",
     quantity: "100",
-    lifespan: lifespanNanos,
+    lifespan,
   });
   await signAndBroadcastEip712({
     network,
@@ -212,20 +211,20 @@ LOW-LEVEL (old way):
     msgs: [orderMsg],
   });
 
-HIGH-LEVEL (new way):
+High-level API:
   await client.placeLimitOrder({
     marketId: 1,
     isBuy: true,
     price: "1.5",
     quantity: "100",
-    lifespanSeconds: 3600,
+    lifespan: { seconds: 3600n, nanos: 0 },
   });
 
 Key improvements:
 - No message building
 - No separate signAndBroadcast call
 - Numbers instead of bigints for IDs
-- Lifespan in seconds (intuitive) instead of nanoseconds
+- Lifespan uses protobuf Duration
 - result.success boolean for easy checking
 `);
 }

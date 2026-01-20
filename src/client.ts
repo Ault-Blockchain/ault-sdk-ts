@@ -5,7 +5,7 @@ import { createMinerApi, type MinerApi } from "./rest/miner";
 import { createExchangeApi, type ExchangeApi } from "./rest/exchange";
 import type { RestContext } from "./rest/context";
 import { buildEip712TypedData } from "./eip712/builder";
-import type { Eip712Msg, Eip712TxContext } from "./eip712/builder";
+import type { AnyEip712Msg, Eip712TxContext } from "./eip712/builder";
 import { signAndBroadcastEip712 } from "./eip712/sign-and-broadcast";
 import type { SignAndBroadcastParams } from "./eip712/sign-and-broadcast";
 import { EIP712_MSG_TYPES } from "./eip712/registry";
@@ -37,7 +37,7 @@ export interface AultClient {
   eip712: {
     buildTypedData: (
       context: Eip712TxContext,
-      msgs: Eip712Msg[],
+      msgs: AnyEip712Msg[],
       evmChainId?: number,
     ) => {
       types: Record<string, unknown>;

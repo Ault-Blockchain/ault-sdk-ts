@@ -1,13 +1,13 @@
 import type { NetworkConfig } from "./core/network";
 import { GAS_CONSTANTS } from "./core/network";
 import type { FetchWithRetryOptions, FetchFn } from "./core/http";
-import type { Base64String } from "./core/base64";
 import { createAultClient, type AultClient } from "./client";
 import type { LicenseApi } from "./rest/license";
 import type { MinerApi } from "./rest/miner";
 import type { ExchangeApi } from "./rest/exchange";
 import { signAndBroadcastEip712 } from "./eip712/sign-and-broadcast";
-import { msg, type Eip712Msg, type WorkSubmission } from "./eip712/builder";
+import { msg, type AnyEip712Msg, type WorkSubmission } from "./eip712/builder";
+import type { Duration } from "./proto/gen/google/protobuf/duration";
 import {
   type AultSigner,
   type SignerInput,
@@ -121,18 +121,16 @@ export interface Client {
    * @param uri - Token URI for metadata
    * @param reason - Reason for minting (default: "")
    */
-  mintLicense(
-    params: { to: string; uri: string; reason?: string } & TxOptions,
-  ): Promise<TxResult>;
+  mintLicense(params: { to: string; uri: string; reason?: string } & TxOptions): Promise<TxResult>;
 
   /**
    * Batch mint multiple licenses.
    */
-  batchMintLicenses(
+  batchMintLicense(
     params: {
       recipients: Array<{ to: string; uri: string }>;
       reason?: string;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
@@ -143,29 +141,23 @@ export interface Client {
       licenseId: bigint | number | string;
       to: string;
       reason?: string;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
    * Burn a license (admin only).
    */
-  burnLicense(
-    params: { licenseId: bigint | number | string; reason?: string } & TxOptions,
-  ): Promise<TxResult>;
+  burnLicense(params: { licenseId: bigint | number | string; reason?: string } & TxOptions): Promise<TxResult>;
 
   /**
    * Revoke a license (admin only).
    */
-  revokeLicense(
-    params: { licenseId: bigint | number | string; reason?: string } & TxOptions,
-  ): Promise<TxResult>;
+  revokeLicense(params: { licenseId: bigint | number | string; reason?: string } & TxOptions): Promise<TxResult>;
 
   /**
    * Set token URI for a license (minter only).
    */
-  setTokenUri(
-    params: { licenseId: bigint | number | string; uri: string } & TxOptions,
-  ): Promise<TxResult>;
+  setTokenURI(params: { licenseId: bigint | number | string; uri: string } & TxOptions): Promise<TxResult>;
 
   /**
    * Approve a member for KYC.
@@ -175,7 +167,7 @@ export interface Client {
   /**
    * Batch approve multiple members for KYC.
    */
-  batchApproveMembers(params: { members: string[] } & TxOptions): Promise<TxResult>;
+  batchApproveMember(params: { members: string[] } & TxOptions): Promise<TxResult>;
 
   /**
    * Revoke a member's KYC approval.
@@ -185,21 +177,17 @@ export interface Client {
   /**
    * Batch revoke multiple members' KYC approval.
    */
-  batchRevokeMembers(params: { members: string[] } & TxOptions): Promise<TxResult>;
+  batchRevokeMember(params: { members: string[] } & TxOptions): Promise<TxResult>;
 
   /**
    * Set KYC approvers (admin only).
    */
-  setKycApprovers(
-    params: { add?: string[]; remove?: string[] } & TxOptions,
-  ): Promise<TxResult>;
+  setKYCApprovers(params: { add?: string[]; remove?: string[] } & TxOptions): Promise<TxResult>;
 
   /**
    * Set minters (admin only).
    */
-  setMinters(
-    params: { add?: string[]; remove?: string[] } & TxOptions,
-  ): Promise<TxResult>;
+  setMinters(params: { add?: string[]; remove?: string[] } & TxOptions): Promise<TxResult>;
 
   // ============================================================================
   // Miner Transaction Methods
@@ -208,39 +196,37 @@ export interface Client {
   /**
    * Delegate licenses to a mining operator.
    */
-  delegateLicenses(
+  delegateMining(
     params: {
       licenseIds: Array<bigint | number | string>;
       operator: string;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
    * Cancel mining delegation for licenses.
    */
-  undelegateLicenses(
-    params: { licenseIds: Array<bigint | number | string> } & TxOptions,
-  ): Promise<TxResult>;
+  cancelMiningDelegation(params: { licenseIds: Array<bigint | number | string> } & TxOptions): Promise<TxResult>;
 
   /**
    * Redelegate licenses to a new operator.
    */
-  redelegateLicenses(
+  redelegateMining(
     params: {
       licenseIds: Array<bigint | number | string>;
       newOperator: string;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
    * Set VRF key for the owner.
    */
-  setVrfKey(
+  setOwnerVrfKey(
     params: {
-      vrfPubkey: Base64String;
-      possessionProof: Base64String;
+      vrfPubkey: Uint8Array;
+      possessionProof: Uint8Array;
       nonce: bigint | number;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
@@ -250,10 +236,10 @@ export interface Client {
     params: {
       licenseId: bigint | number | string;
       epoch: bigint | number | string;
-      y: Base64String;
-      proof: Base64String;
-      nonce: Base64String;
-    } & TxOptions,
+      y: Uint8Array;
+      proof: Uint8Array;
+      nonce: Uint8Array;
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
@@ -264,11 +250,11 @@ export interface Client {
       submissions: Array<{
         licenseId: bigint | number | string;
         epoch: bigint | number | string;
-        y: Base64String;
-        proof: Base64String;
-        nonce: Base64String;
+        y: Uint8Array;
+        proof: Uint8Array;
+        nonce: Uint8Array;
       }>;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
@@ -276,9 +262,9 @@ export interface Client {
    */
   registerOperator(
     params: {
-      commissionRate: bigint | number;
+      commissionRate: number;
       commissionRecipient?: string;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
@@ -291,9 +277,9 @@ export interface Client {
    */
   updateOperatorInfo(
     params: {
-      newCommissionRate: bigint | number;
+      newCommissionRate: number;
       newCommissionRecipient?: string;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   // ============================================================================
@@ -302,7 +288,7 @@ export interface Client {
 
   /**
    * Place a limit order.
-   * @param lifespanSeconds - Order lifespan in SECONDS (auto-converted to nanoseconds)
+   * @param lifespan - Order lifespan as a protobuf Duration
    */
   placeLimitOrder(
     params: {
@@ -310,8 +296,8 @@ export interface Client {
       isBuy: boolean;
       price: string;
       quantity: string;
-      lifespanSeconds: number;
-    } & TxOptions,
+      lifespan: Duration;
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
@@ -322,27 +308,23 @@ export interface Client {
       marketId: bigint | number | string;
       isBuy: boolean;
       quantity: string;
-    } & TxOptions,
+    } & TxOptions
   ): Promise<TxResult>;
 
   /**
    * Cancel a specific order.
    */
-  cancelOrder(params: { orderId: Base64String } & TxOptions): Promise<TxResult>;
+  cancelOrder(params: { orderId: Uint8Array } & TxOptions): Promise<TxResult>;
 
   /**
    * Cancel all orders in a market.
    */
-  cancelAllOrders(
-    params: { marketId: bigint | number | string } & TxOptions,
-  ): Promise<TxResult>;
+  cancelAllOrders(params: { marketId: bigint | number | string } & TxOptions): Promise<TxResult>;
 
   /**
    * Create a new market (requires fee).
    */
-  createMarket(
-    params: { baseDenom: string; quoteDenom: string } & TxOptions,
-  ): Promise<TxResult>;
+  createMarket(params: { baseDenom: string; quoteDenom: string } & TxOptions): Promise<TxResult>;
 
   // ============================================================================
   // Low-level access
@@ -432,7 +414,7 @@ function autoDetectSigner(input: FlexibleSignerInput): AultSigner {
     throw new Error(
       'Object has "request" method but no "address" or "getAddresses". ' +
         'If this is an EIP-1193 provider, use { type: "eip1193", provider, address } format ' +
-        "to explicitly provide the signer address.",
+        "to explicitly provide the signer address."
     );
   }
 
@@ -449,7 +431,7 @@ function autoDetectSigner(input: FlexibleSignerInput): AultSigner {
   }
 
   throw new Error(
-    'Could not auto-detect signer type. Please use explicit { type: "viem" | "ethers" | "privy" | "privateKey" | "eip1193", ... } format.',
+    'Could not auto-detect signer type. Please use explicit { type: "viem" | "ethers" | "privy" | "privateKey" | "eip1193", ... } format.'
   );
 }
 
@@ -484,26 +466,6 @@ function toBigInt(value: bigint | number | string): bigint {
   throw new Error(`Cannot convert ${typeof value} to bigint`);
 }
 
-/**
- * Convert seconds to nanoseconds for exchange lifespan.
- * Uses BigInt math to avoid floating-point precision loss for large values.
- * Maximum safe input is ~292 years (Number.MAX_SAFE_INTEGER nanoseconds).
- */
-function secondsToNanoseconds(seconds: number): bigint {
-  // Separate integer and fractional parts to avoid floating-point precision loss
-  const integerPart = Math.trunc(seconds);
-  const fractionalPart = seconds - integerPart;
-
-  // Convert integer part directly to BigInt, multiply by 1e9
-  const integerNanos = BigInt(integerPart) * 1_000_000_000n;
-
-  // For the fractional part, we can safely use floating-point since it's < 1
-  // and the result will be < 1e9 which is well within safe integer range
-  const fractionalNanos = BigInt(Math.round(fractionalPart * 1_000_000_000));
-
-  return integerNanos + fractionalNanos;
-}
-
 // ============================================================================
 // Factory Function
 // ============================================================================
@@ -526,7 +488,7 @@ function secondsToNanoseconds(seconds: number): bigint {
  * const licenses = await client.license.getOwnedBy(client.address);
  *
  * // Transactions
- * const result = await client.delegateLicenses({
+ * const result = await client.delegateMining({
  *   licenseIds: [1, 2, 3],
  *   operator: '0xOperator...',
  * });
@@ -551,10 +513,7 @@ export async function createClient(options: ClientOptions): Promise<Client> {
   const defaultMemo = options.defaultMemo ?? "";
 
   // Helper to execute a transaction
-  async function exec(
-    msgs: Eip712Msg[],
-    txOptions?: TxOptions,
-  ): Promise<TxResult> {
+  async function exec(msgs: AnyEip712Msg[], txOptions?: TxOptions): Promise<TxResult> {
     const result = await signAndBroadcastEip712({
       network: options.network,
       signer,
@@ -590,81 +549,81 @@ export async function createClient(options: ClientOptions): Promise<Client> {
     async mintLicense({ to, uri, reason = "", gasLimit, memo }) {
       return exec(
         [
-          msg.license.mint({
+          msg.license.mintLicense({
             minter: signerAddress,
             to: normalizeAddress(to),
             uri,
             reason,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
-    async batchMintLicenses({ recipients, reason = "", gasLimit, memo }) {
+    async batchMintLicense({ recipients, reason = "", gasLimit, memo }) {
       return exec(
         [
-          msg.license.batchMint({
+          msg.license.batchMintLicense({
             minter: signerAddress,
             to: recipients.map((r) => normalizeAddress(r.to)),
             uri: recipients.map((r) => r.uri),
             reason,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
     async transferLicense({ licenseId, to, reason = "", gasLimit, memo }) {
       return exec(
         [
-          msg.license.transfer({
+          msg.license.transferLicense({
             from: signerAddress,
             to: normalizeAddress(to),
-            license_id: toBigInt(licenseId),
+            licenseId: toBigInt(licenseId),
             reason,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
     async burnLicense({ licenseId, reason = "", gasLimit, memo }) {
       return exec(
         [
-          msg.license.burn({
+          msg.license.burnLicense({
             authority: signerAddress,
             id: toBigInt(licenseId),
             reason,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
     async revokeLicense({ licenseId, reason = "", gasLimit, memo }) {
       return exec(
         [
-          msg.license.revoke({
+          msg.license.revokeLicense({
             authority: signerAddress,
             id: toBigInt(licenseId),
             reason,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
-    async setTokenUri({ licenseId, uri, gasLimit, memo }) {
+    async setTokenURI({ licenseId, uri, gasLimit, memo }) {
       return exec(
         [
-          msg.license.setTokenUri({
+          msg.license.setTokenURI({
             minter: signerAddress,
             id: toBigInt(licenseId),
             uri,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -676,11 +635,11 @@ export async function createClient(options: ClientOptions): Promise<Client> {
             member: normalizeAddress(member),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
-    async batchApproveMembers({ members, gasLimit, memo }) {
+    async batchApproveMember({ members, gasLimit, memo }) {
       return exec(
         [
           msg.license.batchApproveMember({
@@ -688,7 +647,7 @@ export async function createClient(options: ClientOptions): Promise<Client> {
             members: normalizeAddresses(members),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -700,11 +659,11 @@ export async function createClient(options: ClientOptions): Promise<Client> {
             member: normalizeAddress(member),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
-    async batchRevokeMembers({ members, gasLimit, memo }) {
+    async batchRevokeMember({ members, gasLimit, memo }) {
       return exec(
         [
           msg.license.batchRevokeMember({
@@ -712,20 +671,20 @@ export async function createClient(options: ClientOptions): Promise<Client> {
             members: normalizeAddresses(members),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
-    async setKycApprovers({ add = [], remove = [], gasLimit, memo }) {
+    async setKYCApprovers({ add = [], remove = [], gasLimit, memo }) {
       return exec(
         [
-          msg.license.setKycApprovers({
+          msg.license.setKYCApprovers({
             authority: signerAddress,
             add: normalizeAddresses(add),
             remove: normalizeAddresses(remove),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -738,7 +697,7 @@ export async function createClient(options: ClientOptions): Promise<Client> {
             remove: normalizeAddresses(remove),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -746,55 +705,55 @@ export async function createClient(options: ClientOptions): Promise<Client> {
     // Miner Transactions
     // ============================================================================
 
-    async delegateLicenses({ licenseIds, operator, gasLimit, memo }) {
+    async delegateMining({ licenseIds, operator, gasLimit, memo }) {
       return exec(
         [
-          msg.miner.delegate({
+          msg.miner.delegateMining({
             owner: signerAddress,
-            license_ids: licenseIds.map(toBigInt),
+            licenseIds: licenseIds.map(toBigInt),
             operator: normalizeAddress(operator),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
-    async undelegateLicenses({ licenseIds, gasLimit, memo }) {
+    async cancelMiningDelegation({ licenseIds, gasLimit, memo }) {
       return exec(
         [
-          msg.miner.cancelDelegation({
+          msg.miner.cancelMiningDelegation({
             owner: signerAddress,
-            license_ids: licenseIds.map(toBigInt),
+            licenseIds: licenseIds.map(toBigInt),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
-    async redelegateLicenses({ licenseIds, newOperator, gasLimit, memo }) {
+    async redelegateMining({ licenseIds, newOperator, gasLimit, memo }) {
       return exec(
         [
-          msg.miner.redelegate({
+          msg.miner.redelegateMining({
             owner: signerAddress,
-            license_ids: licenseIds.map(toBigInt),
-            new_operator: normalizeAddress(newOperator),
+            licenseIds: licenseIds.map(toBigInt),
+            newOperator: normalizeAddress(newOperator),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
-    async setVrfKey({ vrfPubkey, possessionProof, nonce, gasLimit, memo }) {
+    async setOwnerVrfKey({ vrfPubkey, possessionProof, nonce, gasLimit, memo }) {
       return exec(
         [
           msg.miner.setOwnerVrfKey({
             owner: signerAddress,
-            vrf_pubkey: vrfPubkey,
-            possession_proof: possessionProof,
+            vrfPubkey,
+            possessionProof,
             nonce: toBigInt(nonce),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -803,20 +762,20 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         [
           msg.miner.submitWork({
             submitter: signerAddress,
-            license_id: toBigInt(licenseId),
+            licenseId: toBigInt(licenseId),
             epoch: toBigInt(epoch),
             y,
             proof,
             nonce,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
     async batchSubmitWork({ submissions, gasLimit, memo }) {
       const mappedSubmissions: WorkSubmission[] = submissions.map((s) => ({
-        license_id: toBigInt(s.licenseId),
+        licenseId: toBigInt(s.licenseId),
         epoch: toBigInt(s.epoch),
         y: s.y,
         proof: s.proof,
@@ -830,7 +789,7 @@ export async function createClient(options: ClientOptions): Promise<Client> {
             submissions: mappedSubmissions,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -839,11 +798,11 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         [
           msg.miner.registerOperator({
             operator: signerAddress,
-            commission_rate: toBigInt(commissionRate),
-            commission_recipient: normalizeAddress(commissionRecipient ?? signerAddress),
+            commissionRate,
+            commissionRecipient: normalizeAddress(commissionRecipient ?? signerAddress),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -854,7 +813,7 @@ export async function createClient(options: ClientOptions): Promise<Client> {
             operator: signerAddress,
           }),
         ],
-        { gasLimit: params.gasLimit, memo: params.memo },
+        { gasLimit: params.gasLimit, memo: params.memo }
       );
     },
 
@@ -863,11 +822,11 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         [
           msg.miner.updateOperatorInfo({
             operator: signerAddress,
-            new_commission_rate: toBigInt(newCommissionRate),
-            new_commission_recipient: normalizeAddress(newCommissionRecipient ?? signerAddress),
+            newCommissionRate,
+            newCommissionRecipient: normalizeAddress(newCommissionRecipient ?? signerAddress),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -875,19 +834,19 @@ export async function createClient(options: ClientOptions): Promise<Client> {
     // Exchange Transactions
     // ============================================================================
 
-    async placeLimitOrder({ marketId, isBuy, price, quantity, lifespanSeconds, gasLimit, memo }) {
+    async placeLimitOrder({ marketId, isBuy, price, quantity, lifespan, gasLimit, memo }) {
       return exec(
         [
           msg.exchange.placeLimitOrder({
             sender: signerAddress,
-            market_id: toBigInt(marketId),
-            is_buy: isBuy,
+            marketId: toBigInt(marketId),
+            isBuy,
             price,
             quantity,
-            lifespan: secondsToNanoseconds(lifespanSeconds),
+            lifespan,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -896,12 +855,12 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         [
           msg.exchange.placeMarketOrder({
             sender: signerAddress,
-            market_id: toBigInt(marketId),
-            is_buy: isBuy,
+            marketId: toBigInt(marketId),
+            isBuy,
             quantity,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -910,10 +869,10 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         [
           msg.exchange.cancelOrder({
             sender: signerAddress,
-            order_id: orderId,
+            orderId,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -922,10 +881,10 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         [
           msg.exchange.cancelAllOrders({
             sender: signerAddress,
-            market_id: toBigInt(marketId),
+            marketId: toBigInt(marketId),
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 
@@ -934,11 +893,11 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         [
           msg.exchange.createMarket({
             sender: signerAddress,
-            base_denom: baseDenom,
-            quote_denom: quoteDenom,
+            baseDenom,
+            quoteDenom,
           }),
         ],
-        { gasLimit, memo },
+        { gasLimit, memo }
       );
     },
 

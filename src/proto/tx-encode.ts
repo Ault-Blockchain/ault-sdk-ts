@@ -140,7 +140,7 @@ export function encodeModeInfo(mode: number): Uint8Array {
 
 export interface SignerInfo {
   publicKey: { typeUrl: string; value: Uint8Array };
-  sequence: bigint | number;
+  sequence: bigint | number | string;
   mode: number;
 }
 
@@ -150,7 +150,7 @@ export function encodeSignerInfo(info: SignerInfo): Uint8Array {
   writer.writeBytes(1, pubKeyAny);
   const modeInfoBytes = encodeModeInfo(info.mode);
   writer.writeBytes(2, modeInfoBytes);
-  writer.writeUint64(3, info.sequence);
+  writer.writeUint64(3, typeof info.sequence === "string" ? BigInt(info.sequence) : info.sequence);
   return writer.finish();
 }
 

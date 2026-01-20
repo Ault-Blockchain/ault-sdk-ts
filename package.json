@@ -18,6 +18,8 @@
     }
   },
   "scripts": {
+    "gen:proto": "buf generate ../ault/proto --template ./buf.gen.ts.yaml && node scripts/generate-eip712-registry.mjs",
+    "gen:eip712": "node scripts/generate-eip712-registry.mjs",
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
@@ -29,6 +31,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.10.2",
     "@cosmjs/encoding": "^0.33.0",
     "viem": "^2.27.0",
     "zod": "^4.3.5"
@@ -39,6 +42,7 @@
     "oxfmt": "^0.24.0",
     "oxlint": "^1.39.0",
     "oxlint-tsgolint": "^0.11.1",
+    "ts-proto": "^2.11.0",
     "tsup": "^8.0.0",
     "typescript": "^5.6.3",
     "vitest": "^1.6.0"

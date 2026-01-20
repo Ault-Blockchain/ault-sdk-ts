@@ -195,8 +195,10 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
         hasPubkey: !!accountInfo.pubkeyBase64,
       });
 
-      expect(accountInfo.accountNumber).toBeGreaterThanOrEqual(0);
-      expect(accountInfo.sequence).toBeGreaterThanOrEqual(0);
+      expect(typeof accountInfo.accountNumber).toBe("string");
+      expect(typeof accountInfo.sequence).toBe("string");
+      expect(BigInt(accountInfo.accountNumber)).toBeGreaterThanOrEqual(0n);
+      expect(BigInt(accountInfo.sequence)).toBeGreaterThanOrEqual(0n);
     });
 
     it("should query license balance", async () => {
@@ -212,10 +214,10 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
     it("should build valid typed data for MsgDelegateMining", async () => {
       const accountInfo = await queryAccount(network, aultAddress);
 
-      const delegateMsg = msg.miner.delegate({
+      const delegateMsg = msg.miner.delegateMining({
         owner: aultAddress,
         operator: aultAddress, // delegate to self for testing
-        license_ids: [1n],
+        licenseIds: [1n],
       });
 
       const typedData = buildEip712TypedData(
@@ -251,10 +253,10 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
     it("should sign typed data with viem account", async () => {
       const accountInfo = await queryAccount(network, aultAddress);
 
-      const delegateMsg = msg.miner.delegate({
+      const delegateMsg = msg.miner.delegateMining({
         owner: aultAddress,
         operator: aultAddress,
-        license_ids: [1n],
+        licenseIds: [1n],
       });
 
       const typedData = buildEip712TypedData(
@@ -315,10 +317,10 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
 
       const operatorAddress = await pickRandomOperator(client, aultAddress);
       console.log(`Delegating to operator: ${operatorAddress}`);
-      const delegateMsg = msg.miner.delegate({
+      const delegateMsg = msg.miner.delegateMining({
         owner: aultAddress,
         operator: operatorAddress,
-        license_ids: [BigInt(licenseId)],
+        licenseIds: [BigInt(licenseId)],
       });
 
       try {
@@ -375,9 +377,9 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
 
       console.log(`Cancelling delegation for license #${licenseId}`);
 
-      const cancelMsg = msg.miner.cancelDelegation({
+      const cancelMsg = msg.miner.cancelMiningDelegation({
         owner: aultAddress,
-        license_ids: [BigInt(licenseId)],
+        licenseIds: [BigInt(licenseId)],
       });
 
       try {
@@ -432,7 +434,7 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
           network,
           signer,
           msgs: [
-            msg.license.mint({
+            msg.license.mintLicense({
               minter: aultAddress,
               to: aultAddress,
               uri: `e2e:${uniqueTag}`,
@@ -470,10 +472,10 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
           network,
           signer,
           msgs: [
-            msg.miner.delegate({
+            msg.miner.delegateMining({
               owner: aultAddress,
               operator: operatorAddress,
-              license_ids: [BigInt(newLicenseId)],
+              licenseIds: [BigInt(newLicenseId)],
             }),
           ],
           memo: "E2E test: delegate minted license",
@@ -498,9 +500,9 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
           network,
           signer,
           msgs: [
-            msg.miner.cancelDelegation({
+            msg.miner.cancelMiningDelegation({
               owner: aultAddress,
-              license_ids: [BigInt(newLicenseId)],
+              licenseIds: [BigInt(newLicenseId)],
             }),
           ],
           memo: "E2E test: undelegate minted license",

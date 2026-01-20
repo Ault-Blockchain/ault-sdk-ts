@@ -10,6 +10,7 @@ export interface FetchWithRetryOptions {
   exponentialBackoff?: boolean;
   retryableMethods?: string[];
   retryableStatuses?: number[];
+  retryOnTimeout?: boolean;
 }
 
 const DEFAULT_OPTIONS: Required<FetchWithRetryOptions> = {
@@ -19,6 +20,7 @@ const DEFAULT_OPTIONS: Required<FetchWithRetryOptions> = {
   exponentialBackoff: true,
   retryableMethods: ["GET", "HEAD", "OPTIONS"],
   retryableStatuses: [408, 429, 500, 502, 503, 504],
+  retryOnTimeout: false,
 };
 
 function ensureFetch(fetchFn?: FetchFn): FetchFn {
@@ -36,17 +38,40 @@ async function fetchWithTimeout(
   timeout: number,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeout);
+  let removeAbortListener: (() => void) | undefined;
+
+  if (options.signal) {
+    const callerSignal = options.signal;
+    if (callerSignal.aborted) {
+      controller.abort();
+    } else {
+      const onAbort = () => {
+        clearTimeout(timeoutId);
+        controller.abort();
+      };
+      callerSignal.addEventListener("abort", onAbort, { once: true });
+      removeAbortListener = () => callerSignal.removeEventListener("abort", onAbort);
+    }
+  }
 
   try {
     return await fetchFn(url, { ...options, signal: controller.signal });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new TimeoutError(`Request to ${url} timed out after ${timeout}ms`);
+      if (timedOut) {
+        throw new TimeoutError(`Request to ${url} timed out after ${timeout}ms`);
+      }
+      throw error;
     }
     throw error;
   } finally {
     clearTimeout(timeoutId);
+    removeAbortListener?.();
   }
 }
 
@@ -73,6 +98,8 @@ export async function fetchWithRetry(
   const method = (options.method || "GET").toUpperCase();
   const canRetry = opts.retryableMethods.includes(method);
   const resolvedFetch = ensureFetch(fetchFn);
+  const isAbortError = (error: unknown): error is Error =>
+    error instanceof Error && error.name === "AbortError";
 
   let lastError: Error | null = null;
 
@@ -95,11 +122,15 @@ export async function fetchWithRetry(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
+      if (isAbortError(error)) {
+        throw error;
+      }
+
       if (!canRetry || attempt >= opts.retries) {
         break;
       }
 
-      if (error instanceof TimeoutError) {
+      if (error instanceof TimeoutError && !opts.retryOnTimeout) {
         break;
       }
 
