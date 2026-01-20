@@ -24,6 +24,7 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:e2e": "vitest run src/__tests__/e2e",
+    "typecheck": "tsc --noEmit",
     "lint": "oxlint . --type-aware",
     "lint:fix": "oxlint --fix .",
     "format": "oxfmt .",

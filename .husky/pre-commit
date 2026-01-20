@@ -1,1 +1,10 @@
+# Run lint-staged (lint + format on staged files)
 npx lint-staged
+
+# Type check the whole project
+echo "Running type check..."
+npx tsc --noEmit
+
+# Build the project
+echo "Running build..."
+pnpm run build
