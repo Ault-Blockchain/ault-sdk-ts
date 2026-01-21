@@ -19,7 +19,7 @@ export const LicenseSchema = z
     revoked_at: z.string().nullable().optional(),
     burned_at: z.string().nullable().optional(),
   })
-  .strict();
+  .passthrough();
 export type License = z.infer<typeof LicenseSchema>;
 
 export const LicenseModuleParamsSchema = z
@@ -40,7 +40,7 @@ export const LicenseModuleParamsSchema = z
     free_max_gas_limit: z.string(),
     max_voting_power_per_address: z.string(),
   })
-  .strict();
+  .passthrough();
 export type LicenseModuleParams = z.infer<typeof LicenseModuleParamsSchema>;
 
 export const MiningDelegationSchema = z
@@ -48,7 +48,7 @@ export const MiningDelegationSchema = z
     license_id: z.string(),
     operator: z.string(),
   })
-  .strict();
+  .passthrough();
 export type MiningDelegation = z.infer<typeof MiningDelegationSchema>;
 
 export const OperatorSchema = z
@@ -58,7 +58,7 @@ export const OperatorSchema = z
     commission_recipient: z.string(),
     last_update_epoch: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type Operator = z.infer<typeof OperatorSchema>;
 
 export const LicenseMinerInfoSchema = z
@@ -71,7 +71,7 @@ export const LicenseMinerInfoSchema = z
     all_time_credits: z.string(),
     all_time_payouts: z.string(),
   })
-  .strict();
+  .passthrough();
 export type LicenseMinerInfo = z.infer<typeof LicenseMinerInfoSchema>;
 
 export const OwnerKeyInfoSchema = z
@@ -83,7 +83,7 @@ export const OwnerKeyInfoSchema = z
     valid_from_epoch: z.string().optional(),
     registration_chain_id: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type OwnerKeyInfo = z.infer<typeof OwnerKeyInfoSchema>;
 
 export const EmissionInfoSchema = z
@@ -97,7 +97,7 @@ export const EmissionInfoSchema = z
     current_epoch: z.string(),
     epochs_per_year: z.string(),
   })
-  .strict();
+  .passthrough();
 export type EmissionInfo = z.infer<typeof EmissionInfoSchema>;
 
 export const YearEmissionSchema = z
@@ -107,7 +107,7 @@ export const YearEmissionSchema = z
     monthly_emission: z.string(),
     daily_emission: z.string(),
   })
-  .strict();
+  .passthrough();
 export type YearEmission = z.infer<typeof YearEmissionSchema>;
 
 export const LicensePayoutsSchema = z
@@ -115,7 +115,7 @@ export const LicensePayoutsSchema = z
     total_payout: z.string(),
     total_credits: z.string(),
   })
-  .strict();
+  .passthrough();
 export type LicensePayouts = z.infer<typeof LicensePayoutsSchema>;
 
 export const MinerModuleParamsSchema = z
@@ -145,7 +145,7 @@ export const MinerModuleParamsSchema = z
     miner_allowed_msgs: z.array(z.string()).default([]),
     max_free_tx_per_epoch: z.number(),
   })
-  .strict();
+  .passthrough();
 export type MinerModuleParams = z.infer<typeof MinerModuleParamsSchema>;
 
 export const EpochInfoSchema = z
@@ -156,7 +156,7 @@ export const EpochInfoSchema = z
     beacon_r: z.string(),
     finalized: z.boolean(),
   })
-  .strict();
+  .passthrough();
 export type EpochInfo = z.infer<typeof EpochInfoSchema>;
 
 export const ExchangeMarketSchema = z
@@ -170,7 +170,7 @@ export const ExchangeMarketSchema = z
     last_price: z.string().optional(),
     last_matching_height: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type ExchangeMarket = z.infer<typeof ExchangeMarketSchema>;
 
 export const ExchangeOrderSchema = z
@@ -186,7 +186,7 @@ export const ExchangeOrderSchema = z
     remaining_deposit: z.string(),
     deadline: z.string(),
   })
-  .strict();
+  .passthrough();
 export type ExchangeOrder = z.infer<typeof ExchangeOrderSchema>;
 
 export const OrderBookPriceLevelSchema = z
@@ -194,7 +194,7 @@ export const OrderBookPriceLevelSchema = z
     p: z.string(),
     q: z.string(),
   })
-  .strict();
+  .passthrough();
 export type OrderBookPriceLevel = z.infer<typeof OrderBookPriceLevelSchema>;
 
 export const OrderBookSchema = z
@@ -203,7 +203,7 @@ export const OrderBookSchema = z
     sells: z.array(OrderBookPriceLevelSchema),
     buys: z.array(OrderBookPriceLevelSchema),
   })
-  .strict();
+  .passthrough();
 export type OrderBook = z.infer<typeof OrderBookSchema>;
 
 export const CoinSchema = z
@@ -211,7 +211,7 @@ export const CoinSchema = z
     denom: z.string(),
     amount: z.string(),
   })
-  .strict();
+  .passthrough();
 export type Coin = z.infer<typeof CoinSchema>;
 
 export const ExchangeFeesSchema = z
@@ -219,7 +219,7 @@ export const ExchangeFeesSchema = z
     default_maker_fee_rate: z.string(),
     default_taker_fee_rate: z.string(),
   })
-  .strict();
+  .passthrough();
 export type ExchangeFees = z.infer<typeof ExchangeFeesSchema>;
 
 export const ExchangeParamsSchema = z
@@ -230,7 +230,7 @@ export const ExchangeParamsSchema = z
     max_order_price_ratio: z.string(),
     max_swap_routes_len: z.number(),
   })
-  .strict();
+  .passthrough();
 export type ExchangeParams = z.infer<typeof ExchangeParamsSchema>;
 
 export const PageResponseSchema = z
@@ -238,10 +238,10 @@ export const PageResponseSchema = z
     next_key: z.string().optional(),
     total: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type PageResponse = z.infer<typeof PageResponseSchema>;
 
-export const LicenseResponseSchema = z.object({ license: LicenseSchema }).strict();
+export const LicenseResponseSchema = z.object({ license: LicenseSchema }).passthrough();
 export type LicenseResponse = z.infer<typeof LicenseResponseSchema>;
 
 export const LicensesResponseSchema = z
@@ -249,16 +249,16 @@ export const LicensesResponseSchema = z
     licenses: z.array(LicenseSchema).default([]),
     next_license_id: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type LicensesResponse = z.infer<typeof LicensesResponseSchema>;
 
-export const BalanceResponseSchema = z.object({ balance: z.string() }).strict();
+export const BalanceResponseSchema = z.object({ balance: z.string() }).passthrough();
 export type BalanceResponse = z.infer<typeof BalanceResponseSchema>;
 
-export const OwnerResponseSchema = z.object({ owner: z.string() }).strict();
+export const OwnerResponseSchema = z.object({ owner: z.string() }).passthrough();
 export type OwnerResponse = z.infer<typeof OwnerResponseSchema>;
 
-export const TokenOfOwnerByIndexResponseSchema = z.object({ id: z.string() }).strict();
+export const TokenOfOwnerByIndexResponseSchema = z.object({ id: z.string() }).passthrough();
 export type TokenOfOwnerByIndexResponse = z.infer<typeof TokenOfOwnerByIndexResponseSchema>;
 
 export const OwnedByResponseSchema = z
@@ -267,18 +267,18 @@ export const OwnedByResponseSchema = z
     total: z.number(),
     next_license_id: z.string(),
   })
-  .strict();
+  .passthrough();
 export type OwnedByResponse = z.infer<typeof OwnedByResponseSchema>;
 
-export const TotalSupplyResponseSchema = z.object({ total_supply: z.string() }).strict();
+export const TotalSupplyResponseSchema = z.object({ total_supply: z.string() }).passthrough();
 export type TotalSupplyResponse = z.infer<typeof TotalSupplyResponseSchema>;
 
-export const IsActiveResponseSchema = z.object({ is_active: z.boolean() }).strict();
+export const IsActiveResponseSchema = z.object({ is_active: z.boolean() }).passthrough();
 export type IsActiveResponse = z.infer<typeof IsActiveResponseSchema>;
 
 export const LicenseParamsResponseSchema = z
   .object({ params: LicenseModuleParamsSchema })
-  .strict();
+  .passthrough();
 export type LicenseParamsResponse = z.infer<typeof LicenseParamsResponseSchema>;
 
 export const MintersResponseSchema = z
@@ -286,12 +286,12 @@ export const MintersResponseSchema = z
     minters: z.array(z.string()).default([]),
     next_address: z.string(),
   })
-  .strict();
+  .passthrough();
 export type MintersResponse = z.infer<typeof MintersResponseSchema>;
 
 export const TransferUnlockTimeResponseSchema = z
   .object({ unlock_time: z.string() })
-  .strict();
+  .passthrough();
 export type TransferUnlockTimeResponse = z.infer<typeof TransferUnlockTimeResponseSchema>;
 
 export const KycApproversResponseSchema = z
@@ -299,7 +299,7 @@ export const KycApproversResponseSchema = z
     approvers: z.array(z.string()).default([]),
     next_address: z.string(),
   })
-  .strict();
+  .passthrough();
 export type KycApproversResponse = z.infer<typeof KycApproversResponseSchema>;
 
 export const ApprovedMembersResponseSchema = z
@@ -307,18 +307,18 @@ export const ApprovedMembersResponseSchema = z
     members: z.array(z.string()).default([]),
     next_address: z.string(),
   })
-  .strict();
+  .passthrough();
 export type ApprovedMembersResponse = z.infer<typeof ApprovedMembersResponseSchema>;
 
 export const IsApprovedMemberResponseSchema = z
   .object({ is_approved: z.boolean() })
-  .strict();
+  .passthrough();
 export type IsApprovedMemberResponse = z.infer<typeof IsApprovedMemberResponseSchema>;
 
-export const IsKycApproverResponseSchema = z.object({ is_approver: z.boolean() }).strict();
+export const IsKycApproverResponseSchema = z.object({ is_approver: z.boolean() }).passthrough();
 export type IsKycApproverResponse = z.infer<typeof IsKycApproverResponseSchema>;
 
-export const ActiveLicenseCountAtResponseSchema = z.object({ count: z.string() }).strict();
+export const ActiveLicenseCountAtResponseSchema = z.object({ count: z.string() }).passthrough();
 export type ActiveLicenseCountAtResponse = z.infer<typeof ActiveLicenseCountAtResponseSchema>;
 
 export const CurrentEpochResponseSchema = z
@@ -327,7 +327,7 @@ export const CurrentEpochResponseSchema = z
     seed: z.string(),
     threshold: z.string(),
   })
-  .strict();
+  .passthrough();
 export type CurrentEpochResponse = z.infer<typeof CurrentEpochResponseSchema>;
 
 export const BeaconResponseSchema = z
@@ -335,26 +335,26 @@ export const BeaconResponseSchema = z
     r: z.string(),
     finalized: z.boolean(),
   })
-  .strict();
+  .passthrough();
 export type BeaconResponse = z.infer<typeof BeaconResponseSchema>;
 
 export const MinerParamsResponseSchema = z
   .object({ params: MinerModuleParamsSchema })
-  .strict();
+  .passthrough();
 export type MinerParamsResponse = z.infer<typeof MinerParamsResponseSchema>;
 
 export const EmissionScheduleResponseSchema = z
   .object({
     schedule: z.array(YearEmissionSchema).default([]),
   })
-  .strict();
+  .passthrough();
 export type EmissionScheduleResponse = z.infer<typeof EmissionScheduleResponseSchema>;
 
 export const EpochInfoResponseSchema = z
   .object({
     info: EpochInfoSchema,
   })
-  .strict();
+  .passthrough();
 export type EpochInfoResponse = z.infer<typeof EpochInfoResponseSchema>;
 
 export const EpochsResponseSchema = z
@@ -364,7 +364,7 @@ export const EpochsResponseSchema = z
     nextEpochKey: z.string().optional(),
     next_epoch: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type EpochsResponse = z.infer<typeof EpochsResponseSchema>;
 
 export const OperatorInfoResponseSchema = z
@@ -372,14 +372,14 @@ export const OperatorInfoResponseSchema = z
     info: OperatorSchema.optional(),
     operator: OperatorSchema.optional(),
   })
-  .strict();
+  .passthrough();
 export type OperatorInfoResponse = z.infer<typeof OperatorInfoResponseSchema>;
 
 export const OperatorsResponseSchema = z
   .object({
     operators: z.array(OperatorSchema).default([]),
   })
-  .strict();
+  .passthrough();
 export type OperatorsResponse = z.infer<typeof OperatorsResponseSchema>;
 
 export const LicenseDelegationResponseSchema = z
@@ -387,19 +387,19 @@ export const LicenseDelegationResponseSchema = z
     delegation: MiningDelegationSchema.nullable().optional(),
     is_delegated: z.boolean(),
   })
-  .strict();
+  .passthrough();
 export type LicenseDelegationResponse = z.infer<typeof LicenseDelegationResponseSchema>;
 
 export const DelegatedLicensesResponseSchema = z
   .object({
     license_ids: z.array(z.string()).default([]),
   })
-  .strict();
+  .passthrough();
 export type DelegatedLicensesResponse = z.infer<typeof DelegatedLicensesResponseSchema>;
 
 export const ExchangeParamsResponseSchema = z
   .object({ params: ExchangeParamsSchema })
-  .strict();
+  .passthrough();
 export type ExchangeParamsResponse = z.infer<typeof ExchangeParamsResponseSchema>;
 
 export const MarketsResponseSchema = z
@@ -407,14 +407,14 @@ export const MarketsResponseSchema = z
     markets: z.array(ExchangeMarketSchema).default([]),
     pagination: PageResponseSchema.optional(),
   })
-  .strict();
+  .passthrough();
 export type MarketsResponse = z.infer<typeof MarketsResponseSchema>;
 
 export const MarketResponseSchema = z
   .object({
     market: ExchangeMarketSchema,
   })
-  .strict();
+  .passthrough();
 export type MarketResponse = z.infer<typeof MarketResponseSchema>;
 
 export const OrdersResponseSchema = z
@@ -422,21 +422,21 @@ export const OrdersResponseSchema = z
     orders: z.array(ExchangeOrderSchema).default([]),
     pagination: PageResponseSchema.optional(),
   })
-  .strict();
+  .passthrough();
 export type OrdersResponse = z.infer<typeof OrdersResponseSchema>;
 
 export const OrderResponseSchema = z
   .object({
     order: ExchangeOrderSchema,
   })
-  .strict();
+  .passthrough();
 export type OrderResponse = z.infer<typeof OrderResponseSchema>;
 
 export const OrderBookResponseSchema = z
   .object({
     order_books: z.array(OrderBookSchema).default([]),
   })
-  .strict();
+  .passthrough();
 export type OrderBookResponse = z.infer<typeof OrderBookResponseSchema>;
 
 // ============================================================================
