@@ -5,6 +5,16 @@ import path from "node:path";
 const REPO_ROOT = process.cwd();
 const PROTO_BASE = path.resolve(REPO_ROOT, "../ault/proto");
 const PROTO_ROOT = path.resolve(PROTO_BASE, "ault");
+const COSMOS_PROTO_BASE = path.resolve(REPO_ROOT, "../cosmos-sdk/proto");
+
+// Specific cosmos proto files to include (staking and distribution tx messages + dependencies)
+const COSMOS_PROTO_FILES = [
+  path.resolve(COSMOS_PROTO_BASE, "cosmos/base/v1beta1/coin.proto"),
+  path.resolve(COSMOS_PROTO_BASE, "cosmos/staking/v1beta1/staking.proto"),
+  path.resolve(COSMOS_PROTO_BASE, "cosmos/staking/v1beta1/tx.proto"),
+  path.resolve(COSMOS_PROTO_BASE, "cosmos/distribution/v1beta1/distribution.proto"),
+  path.resolve(COSMOS_PROTO_BASE, "cosmos/distribution/v1beta1/tx.proto"),
+];
 
 const OUTPUT_REGISTRY_PATH = path.resolve(REPO_ROOT, "src/eip712/registry.generated.ts");
 const OUTPUT_MSG_BUILDERS_PATH = path.resolve(REPO_ROOT, "src/eip712/msg.generated.ts");
@@ -15,6 +25,14 @@ const REGISTRY_OVERRIDES = {
     legacyAminoRegistered: false,
   },
 };
+
+// Whitelist of cosmos message types to include (others are excluded due to complex dependencies)
+const COSMOS_MSG_WHITELIST = new Set([
+  "cosmos.staking.v1beta1.MsgDelegate",
+  "cosmos.staking.v1beta1.MsgUndelegate",
+  "cosmos.staking.v1beta1.MsgBeginRedelegate",
+  "cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward",
+]);
 
 const FIELD_DEFAULT_OVERRIDES = new Map([
   ["ault.miner.v1.MsgRegisterOperator.commissionRecipient", ""],
@@ -74,6 +92,17 @@ function stripComments(input) {
   return input
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\/\/.*$/gm, "");
+}
+
+async function ensureDirExists(dir, label) {
+  try {
+    const stats = await fs.stat(dir);
+    if (!stats.isDirectory()) {
+      throw new Error();
+    }
+  } catch {
+    throw new Error(`Missing ${label} proto directory at ${dir}`);
+  }
 }
 
 async function listProtoFiles(dir) {
@@ -179,6 +208,10 @@ function inferModuleName(pkg) {
   if (parts.length >= 2 && parts[0] === "ault") {
     return parts[1];
   }
+  // Handle cosmos packages like cosmos.staking.v1beta1, cosmos.distribution.v1beta1
+  if (parts.length >= 2 && parts[0] === "cosmos") {
+    return parts[1]; // Returns "staking", "distribution", etc.
+  }
   const versionIndex = parts.findIndex((part) => /^v\d/.test(part));
   if (versionIndex > 0) {
     return parts[versionIndex - 1];
@@ -204,7 +237,13 @@ function toPascalCase(input) {
 }
 
 function protoFileToTsFile(protoFile) {
-  const relative = path.relative(PROTO_BASE, protoFile);
+  // Determine which proto base this file belongs to
+  let relative;
+  if (protoFile.startsWith(COSMOS_PROTO_BASE)) {
+    relative = path.relative(COSMOS_PROTO_BASE, protoFile);
+  } else {
+    relative = path.relative(PROTO_BASE, protoFile);
+  }
   const tsPath = path.join(REPO_ROOT, "src/proto/gen", relative).replace(/\.proto$/, ".ts");
   return tsPath;
 }
@@ -320,7 +359,11 @@ function getFieldDefaultOverride(fullName, camelName) {
 }
 
 async function loadProtoDefinitions() {
-  const files = await listProtoFiles(PROTO_ROOT);
+  await ensureDirExists(PROTO_ROOT, "ault");
+  await ensureDirExists(COSMOS_PROTO_BASE, "cosmos-sdk");
+  const aultFiles = await listProtoFiles(PROTO_ROOT);
+  // Include cosmos proto files for staking and distribution
+  const files = [...aultFiles, ...COSMOS_PROTO_FILES];
   const messageMap = new Map();
   const aminoMap = new Map();
   const requestTypes = new Set();
@@ -353,6 +396,10 @@ async function loadProtoDefinitions() {
       const parts = resolved.split(".");
       const messageName = parts.length > 0 ? parts[parts.length - 1] : "";
       if (!messageName.startsWith("Msg")) {
+        continue;
+      }
+      // For cosmos packages, only include whitelisted messages (to avoid complex dependencies like google.protobuf.Any)
+      if (pkg.startsWith("cosmos.") && !COSMOS_MSG_WHITELIST.has(resolved)) {
         continue;
       }
       requestTypes.add(resolved);

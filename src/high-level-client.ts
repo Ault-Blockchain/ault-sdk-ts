@@ -5,6 +5,7 @@ import { createAultClient, type AultClient } from "./client";
 import type { LicenseApi } from "./rest/license";
 import type { MinerApi } from "./rest/miner";
 import type { ExchangeApi } from "./rest/exchange";
+import type { StakingApi } from "./rest/staking";
 import { signAndBroadcastEip712 } from "./eip712/sign-and-broadcast";
 import { msg, type AnyEip712Msg, type WorkSubmission } from "./eip712/builder";
 import type { Duration } from "./proto/gen/google/protobuf/duration";
@@ -23,7 +24,12 @@ import {
   resolveSignerAddress,
   isAultSigner,
 } from "./eip712/signers";
-import { evmToAult, isValidAultAddress, isValidEvmAddress } from "./utils/address";
+import {
+  evmToAult,
+  isValidAultAddress,
+  isValidEvmAddress,
+  normalizeValidatorAddress,
+} from "./utils/address";
 
 // ============================================================================
 // Types
@@ -110,6 +116,9 @@ export interface Client {
 
   /** Exchange module queries */
   readonly exchange: ExchangeApi;
+
+  /** Staking module queries */
+  readonly staking: StakingApi;
 
   // ============================================================================
   // License Transaction Methods
@@ -327,6 +336,47 @@ export interface Client {
   createMarket(params: { baseDenom: string; quoteDenom: string } & TxOptions): Promise<TxResult>;
 
   // ============================================================================
+  // Staking Transaction Methods
+  // ============================================================================
+
+  /**
+   * Delegate tokens to a validator.
+   */
+  delegate(
+    params: {
+      validatorAddress: string;
+      amount: { denom: string; amount: string };
+    } & TxOptions
+  ): Promise<TxResult>;
+
+  /**
+   * Undelegate tokens from a validator.
+   */
+  undelegate(
+    params: {
+      validatorAddress: string;
+      amount: { denom: string; amount: string };
+    } & TxOptions
+  ): Promise<TxResult>;
+
+  /**
+   * Redelegate tokens from one validator to another.
+   */
+  redelegate(
+    params: {
+      validatorAddressSrc: string;
+      validatorAddressDst: string;
+      amount: { denom: string; amount: string };
+    } & TxOptions
+  ): Promise<TxResult>;
+
+  /**
+   * Withdraw staking rewards from one or more validators.
+   * Creates one message per validator address.
+   */
+  withdrawRewards(params: { validatorAddresses: string[] } & TxOptions): Promise<TxResult>;
+
+  // ============================================================================
   // Low-level access
   // ============================================================================
 
@@ -541,6 +591,7 @@ export async function createClient(options: ClientOptions): Promise<Client> {
     license: lowLevel.rest.license,
     miner: lowLevel.rest.miner,
     exchange: lowLevel.rest.exchange,
+    staking: lowLevel.rest.staking,
 
     // ============================================================================
     // License Transactions
@@ -899,6 +950,64 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         ],
         { gasLimit, memo }
       );
+    },
+
+    // ============================================================================
+    // Staking Transactions
+    // ============================================================================
+
+    async delegate({ validatorAddress, amount, gasLimit, memo }) {
+      return exec(
+        [
+          msg.staking.delegate({
+            delegatorAddress: signerAddress,
+            validatorAddress: normalizeValidatorAddress(validatorAddress),
+            amount,
+          }),
+        ],
+        { gasLimit, memo }
+      );
+    },
+
+    async undelegate({ validatorAddress, amount, gasLimit, memo }) {
+      return exec(
+        [
+          msg.staking.undelegate({
+            delegatorAddress: signerAddress,
+            validatorAddress: normalizeValidatorAddress(validatorAddress),
+            amount,
+          }),
+        ],
+        { gasLimit, memo }
+      );
+    },
+
+    async redelegate({ validatorAddressSrc, validatorAddressDst, amount, gasLimit, memo }) {
+      return exec(
+        [
+          msg.staking.beginRedelegate({
+            delegatorAddress: signerAddress,
+            validatorSrcAddress: normalizeValidatorAddress(validatorAddressSrc),
+            validatorDstAddress: normalizeValidatorAddress(validatorAddressDst),
+            amount,
+          }),
+        ],
+        { gasLimit, memo }
+      );
+    },
+
+    async withdrawRewards({ validatorAddresses, gasLimit, memo }) {
+      if (validatorAddresses.length === 0) {
+        throw new Error("validatorAddresses must include at least one validator address.");
+      }
+      // Create one MsgWithdrawDelegatorReward per validator
+      const msgs = validatorAddresses.map((validatorAddress) =>
+        msg.distribution.withdrawDelegatorReward({
+          delegatorAddress: signerAddress,
+          validatorAddress: normalizeValidatorAddress(validatorAddress),
+        })
+      );
+      return exec(msgs, { gasLimit, memo });
     },
 
     // Low-level access

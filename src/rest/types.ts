@@ -438,3 +438,159 @@ export const OrderBookResponseSchema = z
   })
   .strict();
 export type OrderBookResponse = z.infer<typeof OrderBookResponseSchema>;
+
+// ============================================================================
+// Staking Types
+// ============================================================================
+
+export const ValidatorDescriptionSchema = z.object({
+  moniker: z.string().default(""),
+  identity: z.string().default(""),
+  website: z.string().default(""),
+  security_contact: z.string().default(""),
+  details: z.string().default(""),
+});
+export type ValidatorDescription = z.infer<typeof ValidatorDescriptionSchema>;
+
+export const ValidatorCommissionRatesSchema = z.object({
+  rate: z.string(),
+  max_rate: z.string(),
+  max_change_rate: z.string(),
+});
+export type ValidatorCommissionRates = z.infer<typeof ValidatorCommissionRatesSchema>;
+
+export const ValidatorCommissionSchema = z.object({
+  commission_rates: ValidatorCommissionRatesSchema,
+  update_time: z.string(),
+});
+export type ValidatorCommission = z.infer<typeof ValidatorCommissionSchema>;
+
+export const ValidatorStatusSchema = z.enum([
+  "BOND_STATUS_UNSPECIFIED",
+  "BOND_STATUS_UNBONDED",
+  "BOND_STATUS_UNBONDING",
+  "BOND_STATUS_BONDED",
+]);
+export type ValidatorStatus = z.infer<typeof ValidatorStatusSchema>;
+
+export const ConsensusPubkeySchema = z
+  .object({
+    "@type": z.string(),
+    key: z.string().optional(),
+    value: z.string().optional(),
+  })
+  .passthrough();
+export type ConsensusPubkey = z.infer<typeof ConsensusPubkeySchema>;
+
+export const ValidatorSchema = z.object({
+  operator_address: z.string(),
+  consensus_pubkey: ConsensusPubkeySchema.optional(),
+  jailed: z.boolean(),
+  status: ValidatorStatusSchema,
+  tokens: z.string(),
+  delegator_shares: z.string(),
+  description: ValidatorDescriptionSchema,
+  unbonding_height: z.string(),
+  unbonding_time: z.string(),
+  commission: ValidatorCommissionSchema,
+  min_self_delegation: z.string(),
+});
+export type Validator = z.infer<typeof ValidatorSchema>;
+
+export const DelegationSchema = z.object({
+  delegator_address: z.string(),
+  validator_address: z.string(),
+  shares: z.string(),
+});
+export type Delegation = z.infer<typeof DelegationSchema>;
+
+export const DelegationResponseSchema = z.object({
+  delegation: DelegationSchema,
+  balance: CoinSchema,
+});
+export type DelegationResponse = z.infer<typeof DelegationResponseSchema>;
+
+export const UnbondingDelegationEntrySchema = z.object({
+  creation_height: z.string(),
+  completion_time: z.string(),
+  initial_balance: z.string(),
+  balance: z.string(),
+  unbonding_id: z.string().optional(),
+  unbonding_on_hold_ref_count: z.string().optional(),
+});
+export type UnbondingDelegationEntry = z.infer<typeof UnbondingDelegationEntrySchema>;
+
+export const UnbondingDelegationSchema = z.object({
+  delegator_address: z.string(),
+  validator_address: z.string(),
+  entries: z.array(UnbondingDelegationEntrySchema).default([]),
+});
+export type UnbondingDelegation = z.infer<typeof UnbondingDelegationSchema>;
+
+export const DecCoinSchema = z.object({
+  denom: z.string(),
+  amount: z.string(),
+});
+export type DecCoin = z.infer<typeof DecCoinSchema>;
+
+export const DelegationRewardSchema = z.object({
+  validator_address: z.string(),
+  reward: z.array(DecCoinSchema).default([]),
+});
+export type DelegationReward = z.infer<typeof DelegationRewardSchema>;
+
+export const StakingParamsSchema = z.object({
+  unbonding_time: z.string(),
+  max_validators: z.coerce.number(),
+  max_entries: z.coerce.number(),
+  historical_entries: z.coerce.number(),
+  bond_denom: z.string(),
+  min_commission_rate: z.string().optional(),
+});
+export type StakingParams = z.infer<typeof StakingParamsSchema>;
+
+export const StakingPoolSchema = z.object({
+  not_bonded_tokens: z.string(),
+  bonded_tokens: z.string(),
+});
+export type StakingPool = z.infer<typeof StakingPoolSchema>;
+
+// Staking Response Schemas
+export const ValidatorsResponseSchema = z.object({
+  validators: z.array(ValidatorSchema).default([]),
+  pagination: PageResponseSchema.optional(),
+});
+export type ValidatorsResponse = z.infer<typeof ValidatorsResponseSchema>;
+
+export const ValidatorResponseSchema = z.object({
+  validator: ValidatorSchema,
+});
+export type ValidatorResponse = z.infer<typeof ValidatorResponseSchema>;
+
+export const DelegationsResponseSchema = z.object({
+  delegation_responses: z.array(DelegationResponseSchema).default([]),
+  pagination: PageResponseSchema.optional(),
+});
+export type DelegationsResponse = z.infer<typeof DelegationsResponseSchema>;
+
+export const UnbondingDelegationsResponseSchema = z.object({
+  unbonding_responses: z.array(UnbondingDelegationSchema).default([]),
+  pagination: PageResponseSchema.optional(),
+});
+export type UnbondingDelegationsResponse = z.infer<typeof UnbondingDelegationsResponseSchema>;
+
+export const StakingRewardsResponseSchema = z.object({
+  rewards: z.array(DelegationRewardSchema).default([]),
+  total: z.array(DecCoinSchema).default([]),
+});
+export type StakingRewardsResponse = z.infer<typeof StakingRewardsResponseSchema>;
+
+export const StakingParamsResponseSchema = z.object({
+  params: StakingParamsSchema,
+});
+export type StakingParamsResponse = z.infer<typeof StakingParamsResponseSchema>;
+
+export const StakingPoolResponseSchema = z.object({
+  pool: StakingPoolSchema,
+});
+export type StakingPoolResponse = z.infer<typeof StakingPoolResponseSchema>;

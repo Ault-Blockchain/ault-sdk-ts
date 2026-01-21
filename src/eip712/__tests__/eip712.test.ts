@@ -376,7 +376,8 @@ describe("EIP712_MSG_TYPES registry", () => {
 
   it("aminoType follows naming convention", () => {
     for (const [typeUrl, config] of Object.entries(EIP712_MSG_TYPES)) {
-      expect(config.aminoType, `${typeUrl} aminoType should contain /`).toMatch(/^\w+\/\w+$/);
+      // Allow hyphens in prefix (e.g., "cosmos-sdk/MsgDelegate")
+      expect(config.aminoType, `${typeUrl} aminoType should contain /`).toMatch(/^[\w-]+\/\w+$/);
     }
   });
 

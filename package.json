@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "gen:proto": "buf generate ../ault/proto --template ./buf.gen.ts.yaml && node scripts/generate-eip712-registry.mjs",
+    "gen:proto": "./scripts/generate-protos.sh",
     "gen:eip712": "node scripts/generate-eip712-registry.mjs",
     "build": "tsup",
     "dev": "tsup --watch",

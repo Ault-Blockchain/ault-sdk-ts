@@ -3,6 +3,7 @@ import type { FetchWithRetryOptions, FetchFn } from "./core/http";
 import { createLicenseApi, type LicenseApi } from "./rest/license";
 import { createMinerApi, type MinerApi } from "./rest/miner";
 import { createExchangeApi, type ExchangeApi } from "./rest/exchange";
+import { createStakingApi, type StakingApi } from "./rest/staking";
 import type { RestContext } from "./rest/context";
 import { buildEip712TypedData } from "./eip712/builder";
 import type { AnyEip712Msg, Eip712TxContext } from "./eip712/builder";
@@ -16,6 +17,7 @@ import {
   isValidAultAddress,
   isValidEvmAddress,
   isValidValidatorAddress,
+  normalizeValidatorAddress,
 } from "./utils/address";
 import { parseEvmChainIdFromCosmosChainId } from "./utils/chain-id";
 
@@ -33,6 +35,7 @@ export interface AultClient {
     license: LicenseApi;
     miner: MinerApi;
     exchange: ExchangeApi;
+    staking: StakingApi;
   };
   eip712: {
     buildTypedData: (
@@ -57,6 +60,7 @@ export interface AultClient {
       isValidAultAddress: typeof isValidAultAddress;
       isValidEvmAddress: typeof isValidEvmAddress;
       isValidValidatorAddress: typeof isValidValidatorAddress;
+      normalizeValidatorAddress: typeof normalizeValidatorAddress;
     };
     chainId: {
       parseEvmChainIdFromCosmosChainId: typeof parseEvmChainIdFromCosmosChainId;
@@ -77,6 +81,7 @@ export function createAultClient(options: AultClientOptions): AultClient {
       license: createLicenseApi(context),
       miner: createMinerApi(context),
       exchange: createExchangeApi(context),
+      staking: createStakingApi(context),
     },
     eip712: {
       buildTypedData: buildEip712TypedData,
@@ -98,6 +103,7 @@ export function createAultClient(options: AultClientOptions): AultClient {
         isValidAultAddress,
         isValidEvmAddress,
         isValidValidatorAddress,
+        normalizeValidatorAddress,
       },
       chainId: {
         parseEvmChainIdFromCosmosChainId,

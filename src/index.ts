@@ -24,4 +24,5 @@ export * from "./rest/context";
 export * from "./rest/license";
 export * from "./rest/miner";
 export * from "./rest/exchange";
+export * from "./rest/staking";
 export * from "./rest/types";

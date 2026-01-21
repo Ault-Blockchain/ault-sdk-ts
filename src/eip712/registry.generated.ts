@@ -355,4 +355,58 @@ export const EIP712_MSG_TYPES: Record<string, Eip712MsgTypeConfig> = {
       ],
     },
   },
+  "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward": {
+    aminoType: "cosmos-sdk/MsgWithdrawDelegationReward",
+    eip712TypeName: "TypeMsgWithdrawDelegatorReward",
+    valueFields: [
+      { name: "validator_address", type: "string" },
+      { name: "delegator_address", type: "string" },
+    ],
+  },
+  "/cosmos.staking.v1beta1.MsgBeginRedelegate": {
+    aminoType: "cosmos-sdk/MsgBeginRedelegate",
+    eip712TypeName: "TypeMsgBeginRedelegate",
+    valueFields: [
+      { name: "validator_src_address", type: "string" },
+      { name: "validator_dst_address", type: "string" },
+      { name: "delegator_address", type: "string" },
+      { name: "amount", type: "NESTED" },
+    ],
+    nestedTypes: {
+      amount: [
+        { name: "denom", type: "string" },
+        { name: "amount", type: "string" },
+      ],
+    },
+  },
+  "/cosmos.staking.v1beta1.MsgDelegate": {
+    aminoType: "cosmos-sdk/MsgDelegate",
+    eip712TypeName: "TypeMsgDelegate",
+    valueFields: [
+      { name: "validator_address", type: "string" },
+      { name: "delegator_address", type: "string" },
+      { name: "amount", type: "NESTED" },
+    ],
+    nestedTypes: {
+      amount: [
+        { name: "denom", type: "string" },
+        { name: "amount", type: "string" },
+      ],
+    },
+  },
+  "/cosmos.staking.v1beta1.MsgUndelegate": {
+    aminoType: "cosmos-sdk/MsgUndelegate",
+    eip712TypeName: "TypeMsgUndelegate",
+    valueFields: [
+      { name: "validator_address", type: "string" },
+      { name: "delegator_address", type: "string" },
+      { name: "amount", type: "NESTED" },
+    ],
+    nestedTypes: {
+      amount: [
+        { name: "denom", type: "string" },
+        { name: "amount", type: "string" },
+      ],
+    },
+  },
 };

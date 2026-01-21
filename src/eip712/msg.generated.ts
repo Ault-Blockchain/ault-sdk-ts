@@ -3,6 +3,8 @@ import type { Eip712Msg } from "./builder";
 import type { MsgCancelAllOrders, MsgCancelOrder, MsgCreateMarket, MsgPlaceLimitOrder, MsgPlaceMarketOrder, MsgUpdateMarketParams } from "../proto/gen/ault/exchange/v1beta1/tx";
 import type { MsgApproveMember, MsgBatchApproveMember, MsgBatchMintLicense, MsgBatchRevokeMember, MsgBurnLicense, MsgMintLicense, MsgRevokeLicense, MsgRevokeMember, MsgSetKYCApprovers, MsgSetMinters, MsgSetParams, MsgSetTokenURI, MsgTransferLicense, MsgUpdateParams as MsgUpdateParamsAultLicenseV1 } from "../proto/gen/ault/license/v1/tx";
 import type { MsgBatchSubmitWork, MsgCancelMiningDelegation, MsgDelegateMining, MsgRedelegateMining, MsgRegisterOperator, MsgSetOwnerVrfKey, MsgSubmitWork, MsgUnregisterOperator, MsgUpdateOperatorInfo, MsgUpdateParams as MsgUpdateParamsAultMinerV1 } from "../proto/gen/ault/miner/v1/tx";
+import type { MsgWithdrawDelegatorReward } from "../proto/gen/cosmos/distribution/v1beta1/tx";
+import type { MsgBeginRedelegate, MsgDelegate, MsgUndelegate } from "../proto/gen/cosmos/staking/v1beta1/tx";
 
 const buildMsg = <TTypeUrl extends string, TValue>(typeUrl: TTypeUrl, value: TValue): Eip712Msg<TValue, TTypeUrl> => ({
   typeUrl,
@@ -10,6 +12,9 @@ const buildMsg = <TTypeUrl extends string, TValue>(typeUrl: TTypeUrl, value: TVa
 });
 
 export const msg = {
+  distribution: {
+    withdrawDelegatorReward: (value: MsgWithdrawDelegatorReward) => buildMsg("/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward", value),
+  },
   exchange: {
     cancelAllOrders: (value: MsgCancelAllOrders) => buildMsg("/ault.exchange.v1beta1.MsgCancelAllOrders", value),
     cancelOrder: (value: MsgCancelOrder) => buildMsg("/ault.exchange.v1beta1.MsgCancelOrder", value),
@@ -46,6 +51,11 @@ export const msg = {
     updateOperatorInfo: (value: MsgUpdateOperatorInfo) => buildMsg("/ault.miner.v1.MsgUpdateOperatorInfo", value),
     updateParams: (value: MsgUpdateParamsAultMinerV1) => buildMsg("/ault.miner.v1.MsgUpdateParams", value),
   },
+  staking: {
+    beginRedelegate: (value: MsgBeginRedelegate) => buildMsg("/cosmos.staking.v1beta1.MsgBeginRedelegate", value),
+    delegate: (value: MsgDelegate) => buildMsg("/cosmos.staking.v1beta1.MsgDelegate", value),
+    undelegate: (value: MsgUndelegate) => buildMsg("/cosmos.staking.v1beta1.MsgUndelegate", value),
+  },
 } as const;
 
 export type AnyEip712Msg =
@@ -79,4 +89,8 @@ export type AnyEip712Msg =
   | Eip712Msg<MsgUnregisterOperator, "/ault.miner.v1.MsgUnregisterOperator">
   | Eip712Msg<MsgUpdateOperatorInfo, "/ault.miner.v1.MsgUpdateOperatorInfo">
   | Eip712Msg<MsgUpdateParamsAultMinerV1, "/ault.miner.v1.MsgUpdateParams">
+  | Eip712Msg<MsgWithdrawDelegatorReward, "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward">
+  | Eip712Msg<MsgBeginRedelegate, "/cosmos.staking.v1beta1.MsgBeginRedelegate">
+  | Eip712Msg<MsgDelegate, "/cosmos.staking.v1beta1.MsgDelegate">
+  | Eip712Msg<MsgUndelegate, "/cosmos.staking.v1beta1.MsgUndelegate">
 ;

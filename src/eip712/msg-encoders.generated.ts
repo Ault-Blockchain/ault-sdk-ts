@@ -2,6 +2,8 @@
 import { MsgCancelAllOrders, MsgCancelOrder, MsgCreateMarket, MsgPlaceLimitOrder, MsgPlaceMarketOrder, MsgUpdateMarketParams } from "../proto/gen/ault/exchange/v1beta1/tx";
 import { MsgApproveMember, MsgBatchApproveMember, MsgBatchMintLicense, MsgBatchRevokeMember, MsgBurnLicense, MsgMintLicense, MsgRevokeLicense, MsgRevokeMember, MsgSetKYCApprovers, MsgSetMinters, MsgSetParams, MsgSetTokenURI, MsgTransferLicense, MsgUpdateParams as MsgUpdateParamsAultLicenseV1 } from "../proto/gen/ault/license/v1/tx";
 import { MsgBatchSubmitWork, MsgCancelMiningDelegation, MsgDelegateMining, MsgRedelegateMining, MsgRegisterOperator, MsgSetOwnerVrfKey, MsgSubmitWork, MsgUnregisterOperator, MsgUpdateOperatorInfo, MsgUpdateParams as MsgUpdateParamsAultMinerV1 } from "../proto/gen/ault/miner/v1/tx";
+import { MsgWithdrawDelegatorReward } from "../proto/gen/cosmos/distribution/v1beta1/tx";
+import { MsgBeginRedelegate, MsgDelegate, MsgUndelegate } from "../proto/gen/cosmos/staking/v1beta1/tx";
 import { base64ToBytes } from "../core/base64";
 
 const EMPTY_RECORD: Record<string, unknown> = {};
@@ -558,6 +560,55 @@ function mapAultMinerV1WorkSubmission(input: unknown, label: string = "value") {
   };
 }
 
+function mapCosmosBaseV1beta1Coin(input: unknown, label: string = "value") {
+  const record = asRecord(input);
+  const prefix = label ? `${label}.` : "";
+  return {
+    denom: requireString(getField(record, "denom", "denom"), `${prefix}denom`),
+    amount: requireString(getField(record, "amount", "amount"), `${prefix}amount`),
+  };
+}
+
+function mapCosmosDistributionV1beta1MsgWithdrawDelegatorReward(input: unknown, label: string = "value") {
+  const record = asRecord(input);
+  const prefix = label ? `${label}.` : "";
+  return {
+    delegatorAddress: requireString(getField(record, "delegatorAddress", "delegator_address"), `${prefix}delegatorAddress`),
+    validatorAddress: requireString(getField(record, "validatorAddress", "validator_address"), `${prefix}validatorAddress`),
+  };
+}
+
+function mapCosmosStakingV1beta1MsgBeginRedelegate(input: unknown, label: string = "value") {
+  const record = asRecord(input);
+  const prefix = label ? `${label}.` : "";
+  return {
+    delegatorAddress: requireString(getField(record, "delegatorAddress", "delegator_address"), `${prefix}delegatorAddress`),
+    validatorSrcAddress: requireString(getField(record, "validatorSrcAddress", "validator_src_address"), `${prefix}validatorSrcAddress`),
+    validatorDstAddress: requireString(getField(record, "validatorDstAddress", "validator_dst_address"), `${prefix}validatorDstAddress`),
+    amount: mapCosmosBaseV1beta1Coin(asRecord(getField(record, "amount", "amount")), `${prefix}amount`),
+  };
+}
+
+function mapCosmosStakingV1beta1MsgDelegate(input: unknown, label: string = "value") {
+  const record = asRecord(input);
+  const prefix = label ? `${label}.` : "";
+  return {
+    delegatorAddress: requireString(getField(record, "delegatorAddress", "delegator_address"), `${prefix}delegatorAddress`),
+    validatorAddress: requireString(getField(record, "validatorAddress", "validator_address"), `${prefix}validatorAddress`),
+    amount: mapCosmosBaseV1beta1Coin(asRecord(getField(record, "amount", "amount")), `${prefix}amount`),
+  };
+}
+
+function mapCosmosStakingV1beta1MsgUndelegate(input: unknown, label: string = "value") {
+  const record = asRecord(input);
+  const prefix = label ? `${label}.` : "";
+  return {
+    delegatorAddress: requireString(getField(record, "delegatorAddress", "delegator_address"), `${prefix}delegatorAddress`),
+    validatorAddress: requireString(getField(record, "validatorAddress", "validator_address"), `${prefix}validatorAddress`),
+    amount: mapCosmosBaseV1beta1Coin(asRecord(getField(record, "amount", "amount")), `${prefix}amount`),
+  };
+}
+
 export const MSG_ENCODERS: Record<string, (value: unknown) => Uint8Array> = {
   "/ault.exchange.v1beta1.MsgCancelAllOrders": (value: unknown) =>
     MsgCancelAllOrders.encode(MsgCancelAllOrders.fromPartial(mapAultExchangeV1beta1MsgCancelAllOrders(value))).finish(),
@@ -619,4 +670,12 @@ export const MSG_ENCODERS: Record<string, (value: unknown) => Uint8Array> = {
     MsgUpdateOperatorInfo.encode(MsgUpdateOperatorInfo.fromPartial(mapAultMinerV1MsgUpdateOperatorInfo(value))).finish(),
   "/ault.miner.v1.MsgUpdateParams": (value: unknown) =>
     MsgUpdateParamsAultMinerV1.encode(MsgUpdateParamsAultMinerV1.fromPartial(mapAultMinerV1MsgUpdateParams(value))).finish(),
+  "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward": (value: unknown) =>
+    MsgWithdrawDelegatorReward.encode(MsgWithdrawDelegatorReward.fromPartial(mapCosmosDistributionV1beta1MsgWithdrawDelegatorReward(value))).finish(),
+  "/cosmos.staking.v1beta1.MsgBeginRedelegate": (value: unknown) =>
+    MsgBeginRedelegate.encode(MsgBeginRedelegate.fromPartial(mapCosmosStakingV1beta1MsgBeginRedelegate(value))).finish(),
+  "/cosmos.staking.v1beta1.MsgDelegate": (value: unknown) =>
+    MsgDelegate.encode(MsgDelegate.fromPartial(mapCosmosStakingV1beta1MsgDelegate(value))).finish(),
+  "/cosmos.staking.v1beta1.MsgUndelegate": (value: unknown) =>
+    MsgUndelegate.encode(MsgUndelegate.fromPartial(mapCosmosStakingV1beta1MsgUndelegate(value))).finish(),
 };

@@ -338,6 +338,25 @@ await client.delegateMining({
 });
 ```
 
+## Development
+
+### Generating Protos
+
+Proto and EIP-712 generation expects both the Ault core repo and the Cosmos SDK repo to be checked out alongside this repo:
+
+```
+../ault/proto
+../cosmos-sdk/proto
+```
+
+From this repo root, run:
+
+```bash
+pnpm gen:proto
+```
+
+Note: `pnpm gen:eip712` also reads Cosmos SDK protos (staking/distribution) and requires `../cosmos-sdk/proto`.
+
 ## Error Handling
 
 ```typescript

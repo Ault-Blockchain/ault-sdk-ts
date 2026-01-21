@@ -33,3 +33,10 @@ export function isValidValidatorAddress(address: string): boolean {
     return false;
   }
 }
+
+export function normalizeValidatorAddress(address: string): string {
+  if (isValidValidatorAddress(address)) {
+    return address;
+  }
+  throw new Error(`Invalid validator address format: ${address}`);
+}
