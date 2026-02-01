@@ -32,7 +32,7 @@ export const LicenseModuleParamsSchema = z
     allow_metadata_update: z.boolean(),
     admin_can_revoke: z.boolean(),
     admin_can_burn: z.boolean(),
-    max_batch_mint_size: z.number(),
+    max_batch_size: z.number(),
     transfer_unlock_days: z.number(),
     enable_transfers: z.boolean(),
     minter_allowed_msgs: z.array(z.string()).default([]),
@@ -241,16 +241,32 @@ export const PageResponseSchema = z
   .passthrough();
 export type PageResponse = z.infer<typeof PageResponseSchema>;
 
+export interface PaginationParams {
+  "pagination.key"?: string;
+  "pagination.offset"?: string | number;
+  "pagination.limit"?: string | number;
+  "pagination.count_total"?: boolean;
+  "pagination.reverse"?: boolean;
+}
+
 export const LicenseResponseSchema = z.object({ license: LicenseSchema }).passthrough();
 export type LicenseResponse = z.infer<typeof LicenseResponseSchema>;
 
 export const LicensesResponseSchema = z
   .object({
     licenses: z.array(LicenseSchema).default([]),
-    next_license_id: z.string().optional(),
+    pagination: PageResponseSchema.optional(),
   })
   .passthrough();
 export type LicensesResponse = z.infer<typeof LicensesResponseSchema>;
+
+export const LicensesByOwnerResponseSchema = z
+  .object({
+    licenses: z.array(LicenseSchema).default([]),
+    pagination: PageResponseSchema.optional(),
+  })
+  .passthrough();
+export type LicensesByOwnerResponse = z.infer<typeof LicensesByOwnerResponseSchema>;
 
 export const BalanceResponseSchema = z.object({ balance: z.string() }).passthrough();
 export type BalanceResponse = z.infer<typeof BalanceResponseSchema>;
@@ -264,8 +280,7 @@ export type TokenOfOwnerByIndexResponse = z.infer<typeof TokenOfOwnerByIndexResp
 export const OwnedByResponseSchema = z
   .object({
     license_ids: z.array(z.string()).default([]),
-    total: z.number(),
-    next_license_id: z.string(),
+    pagination: PageResponseSchema.optional(),
   })
   .passthrough();
 export type OwnedByResponse = z.infer<typeof OwnedByResponseSchema>;
@@ -284,7 +299,7 @@ export type LicenseParamsResponse = z.infer<typeof LicenseParamsResponseSchema>;
 export const MintersResponseSchema = z
   .object({
     minters: z.array(z.string()).default([]),
-    next_address: z.string(),
+    pagination: PageResponseSchema.optional(),
   })
   .passthrough();
 export type MintersResponse = z.infer<typeof MintersResponseSchema>;
@@ -297,7 +312,7 @@ export type TransferUnlockTimeResponse = z.infer<typeof TransferUnlockTimeRespon
 export const KycApproversResponseSchema = z
   .object({
     approvers: z.array(z.string()).default([]),
-    next_address: z.string(),
+    pagination: PageResponseSchema.optional(),
   })
   .passthrough();
 export type KycApproversResponse = z.infer<typeof KycApproversResponseSchema>;
@@ -305,7 +320,7 @@ export type KycApproversResponse = z.infer<typeof KycApproversResponseSchema>;
 export const ApprovedMembersResponseSchema = z
   .object({
     members: z.array(z.string()).default([]),
-    next_address: z.string(),
+    pagination: PageResponseSchema.optional(),
   })
   .passthrough();
 export type ApprovedMembersResponse = z.infer<typeof ApprovedMembersResponseSchema>;
@@ -360,9 +375,7 @@ export type EpochInfoResponse = z.infer<typeof EpochInfoResponseSchema>;
 export const EpochsResponseSchema = z
   .object({
     epochs: z.array(EpochInfoSchema).default([]),
-    next_epoch_key: z.string().optional(),
-    nextEpochKey: z.string().optional(),
-    next_epoch: z.string().optional(),
+    pagination: PageResponseSchema.optional(),
   })
   .passthrough();
 export type EpochsResponse = z.infer<typeof EpochsResponseSchema>;
@@ -378,6 +391,7 @@ export type OperatorInfoResponse = z.infer<typeof OperatorInfoResponseSchema>;
 export const OperatorsResponseSchema = z
   .object({
     operators: z.array(OperatorSchema).default([]),
+    pagination: PageResponseSchema.optional(),
   })
   .passthrough();
 export type OperatorsResponse = z.infer<typeof OperatorsResponseSchema>;
@@ -393,6 +407,7 @@ export type LicenseDelegationResponse = z.infer<typeof LicenseDelegationResponse
 export const DelegatedLicensesResponseSchema = z
   .object({
     license_ids: z.array(z.string()).default([]),
+    pagination: PageResponseSchema.optional(),
   })
   .passthrough();
 export type DelegatedLicensesResponse = z.infer<typeof DelegatedLicensesResponseSchema>;

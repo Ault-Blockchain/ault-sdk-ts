@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { PageRequest, PageResponse } from "../../../cosmos/base/query/v1beta1/pagination";
 import { EpochInfo, MiningDelegation, OperatorInfo, Params } from "./miner";
 
 export const protobufPackage = "ault.miner.v1";
@@ -136,28 +137,18 @@ export interface QueryEpochInfoResponse {
   info: EpochInfo | undefined;
 }
 
-/**
- * QueryEpochsRequest is the request for Query/Epochs
- * Uses cursor-based pagination for efficient iteration
- */
+/** QueryEpochsRequest is the request for Query/Epochs */
 export interface QueryEpochsRequest {
-  /**
-   * epoch_key is the cursor (epoch number) to start from
-   * If 0, starts from epoch 1 when ascending, or current epoch when descending
-   */
-  epochKey: bigint;
-  /** limit is the maximum number of epochs to return */
-  limit: number;
-  /** ascending sets the order (false = newest first, true = oldest first) */
-  ascending: boolean;
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
 }
 
 /** QueryEpochsResponse is the response for Query/Epochs */
 export interface QueryEpochsResponse {
   /** epochs contains the requested epoch information */
   epochs: EpochInfo[];
-  /** next_epoch_key for pagination (0 if no more data) */
-  nextEpochKey: bigint;
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
 }
 
 /** QueryOwnerKeyRequest is the request for Query/OwnerKey */
@@ -199,12 +190,16 @@ export interface QueryOperatorInfoResponse {
 
 /** QueryOperatorsRequest is the request for Query/Operators */
 export interface QueryOperatorsRequest {
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
 }
 
 /** QueryOperatorsResponse is the response for Query/Operators */
 export interface QueryOperatorsResponse {
-  /** operators contains all registered operators */
+  /** operators contains registered operators */
   operators: OperatorInfo[];
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
 }
 
 /** QueryLicenseDelegationRequest is the request for Query/LicenseDelegation */
@@ -227,12 +222,16 @@ export interface QueryLicenseDelegationResponse {
 export interface QueryDelegatedLicensesRequest {
   /** operator address to query */
   operator: string;
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
 }
 
 /** QueryDelegatedLicensesResponse is the response for Query/DelegatedLicenses */
 export interface QueryDelegatedLicensesResponse {
-  /** license_ids contains all licenses delegated to this operator */
+  /** license_ids contains licenses delegated to this operator */
   licenseIds: bigint[];
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
 }
 
 /** QueryLicensePayoutsRequest is the request for Query/LicensePayouts */
@@ -1510,22 +1509,13 @@ export const QueryEpochInfoResponse: MessageFns<QueryEpochInfoResponse> = {
 };
 
 function createBaseQueryEpochsRequest(): QueryEpochsRequest {
-  return { epochKey: 0n, limit: 0, ascending: false };
+  return { pagination: undefined };
 }
 
 export const QueryEpochsRequest: MessageFns<QueryEpochsRequest> = {
   encode(message: QueryEpochsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.epochKey !== 0n) {
-      if (BigInt.asUintN(64, message.epochKey) !== message.epochKey) {
-        throw new globalThis.Error("value provided for field message.epochKey of type uint64 too large");
-      }
-      writer.uint32(8).uint64(message.epochKey);
-    }
-    if (message.limit !== 0) {
-      writer.uint32(16).uint32(message.limit);
-    }
-    if (message.ascending !== false) {
-      writer.uint32(24).bool(message.ascending);
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -1538,27 +1528,11 @@ export const QueryEpochsRequest: MessageFns<QueryEpochsRequest> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
             break;
           }
 
-          message.epochKey = reader.uint64() as bigint;
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.limit = reader.uint32();
-          continue;
-        }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.ascending = reader.bool();
+          message.pagination = PageRequest.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1571,27 +1545,13 @@ export const QueryEpochsRequest: MessageFns<QueryEpochsRequest> = {
   },
 
   fromJSON(object: any): QueryEpochsRequest {
-    return {
-      epochKey: isSet(object.epochKey)
-        ? BigInt(object.epochKey)
-        : isSet(object.epoch_key)
-        ? BigInt(object.epoch_key)
-        : 0n,
-      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
-      ascending: isSet(object.ascending) ? globalThis.Boolean(object.ascending) : false,
-    };
+    return { pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined };
   },
 
   toJSON(message: QueryEpochsRequest): unknown {
     const obj: any = {};
-    if (message.epochKey !== 0n) {
-      obj.epochKey = message.epochKey.toString();
-    }
-    if (message.limit !== 0) {
-      obj.limit = Math.round(message.limit);
-    }
-    if (message.ascending !== false) {
-      obj.ascending = message.ascending;
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
     }
     return obj;
   },
@@ -1601,15 +1561,15 @@ export const QueryEpochsRequest: MessageFns<QueryEpochsRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<QueryEpochsRequest>, I>>(object: I): QueryEpochsRequest {
     const message = createBaseQueryEpochsRequest();
-    message.epochKey = object.epochKey ?? 0n;
-    message.limit = object.limit ?? 0;
-    message.ascending = object.ascending ?? false;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryEpochsResponse(): QueryEpochsResponse {
-  return { epochs: [], nextEpochKey: 0n };
+  return { epochs: [], pagination: undefined };
 }
 
 export const QueryEpochsResponse: MessageFns<QueryEpochsResponse> = {
@@ -1617,11 +1577,8 @@ export const QueryEpochsResponse: MessageFns<QueryEpochsResponse> = {
     for (const v of message.epochs) {
       EpochInfo.encode(v!, writer.uint32(10).fork()).join();
     }
-    if (message.nextEpochKey !== 0n) {
-      if (BigInt.asUintN(64, message.nextEpochKey) !== message.nextEpochKey) {
-        throw new globalThis.Error("value provided for field message.nextEpochKey of type uint64 too large");
-      }
-      writer.uint32(16).uint64(message.nextEpochKey);
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -1642,11 +1599,11 @@ export const QueryEpochsResponse: MessageFns<QueryEpochsResponse> = {
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.nextEpochKey = reader.uint64() as bigint;
+          message.pagination = PageResponse.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1661,11 +1618,7 @@ export const QueryEpochsResponse: MessageFns<QueryEpochsResponse> = {
   fromJSON(object: any): QueryEpochsResponse {
     return {
       epochs: globalThis.Array.isArray(object?.epochs) ? object.epochs.map((e: any) => EpochInfo.fromJSON(e)) : [],
-      nextEpochKey: isSet(object.nextEpochKey)
-        ? BigInt(object.nextEpochKey)
-        : isSet(object.next_epoch_key)
-        ? BigInt(object.next_epoch_key)
-        : 0n,
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -1674,8 +1627,8 @@ export const QueryEpochsResponse: MessageFns<QueryEpochsResponse> = {
     if (message.epochs?.length) {
       obj.epochs = message.epochs.map((e) => EpochInfo.toJSON(e));
     }
-    if (message.nextEpochKey !== 0n) {
-      obj.nextEpochKey = message.nextEpochKey.toString();
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
     }
     return obj;
   },
@@ -1686,7 +1639,9 @@ export const QueryEpochsResponse: MessageFns<QueryEpochsResponse> = {
   fromPartial<I extends Exact<DeepPartial<QueryEpochsResponse>, I>>(object: I): QueryEpochsResponse {
     const message = createBaseQueryEpochsResponse();
     message.epochs = object.epochs?.map((e) => EpochInfo.fromPartial(e)) || [];
-    message.nextEpochKey = object.nextEpochKey ?? 0n;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
@@ -2047,11 +2002,14 @@ export const QueryOperatorInfoResponse: MessageFns<QueryOperatorInfoResponse> = 
 };
 
 function createBaseQueryOperatorsRequest(): QueryOperatorsRequest {
-  return {};
+  return { pagination: undefined };
 }
 
 export const QueryOperatorsRequest: MessageFns<QueryOperatorsRequest> = {
-  encode(_: QueryOperatorsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(message: QueryOperatorsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(10).fork()).join();
+    }
     return writer;
   },
 
@@ -2062,6 +2020,14 @@ export const QueryOperatorsRequest: MessageFns<QueryOperatorsRequest> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.pagination = PageRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2071,32 +2037,41 @@ export const QueryOperatorsRequest: MessageFns<QueryOperatorsRequest> = {
     return message;
   },
 
-  fromJSON(_: any): QueryOperatorsRequest {
-    return {};
+  fromJSON(object: any): QueryOperatorsRequest {
+    return { pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined };
   },
 
-  toJSON(_: QueryOperatorsRequest): unknown {
+  toJSON(message: QueryOperatorsRequest): unknown {
     const obj: any = {};
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
+    }
     return obj;
   },
 
   create<I extends Exact<DeepPartial<QueryOperatorsRequest>, I>>(base?: I): QueryOperatorsRequest {
     return QueryOperatorsRequest.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<QueryOperatorsRequest>, I>>(_: I): QueryOperatorsRequest {
+  fromPartial<I extends Exact<DeepPartial<QueryOperatorsRequest>, I>>(object: I): QueryOperatorsRequest {
     const message = createBaseQueryOperatorsRequest();
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryOperatorsResponse(): QueryOperatorsResponse {
-  return { operators: [] };
+  return { operators: [], pagination: undefined };
 }
 
 export const QueryOperatorsResponse: MessageFns<QueryOperatorsResponse> = {
   encode(message: QueryOperatorsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.operators) {
       OperatorInfo.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -2116,6 +2091,14 @@ export const QueryOperatorsResponse: MessageFns<QueryOperatorsResponse> = {
           message.operators.push(OperatorInfo.decode(reader, reader.uint32()));
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pagination = PageResponse.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2130,6 +2113,7 @@ export const QueryOperatorsResponse: MessageFns<QueryOperatorsResponse> = {
       operators: globalThis.Array.isArray(object?.operators)
         ? object.operators.map((e: any) => OperatorInfo.fromJSON(e))
         : [],
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -2137,6 +2121,9 @@ export const QueryOperatorsResponse: MessageFns<QueryOperatorsResponse> = {
     const obj: any = {};
     if (message.operators?.length) {
       obj.operators = message.operators.map((e) => OperatorInfo.toJSON(e));
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
     }
     return obj;
   },
@@ -2147,6 +2134,9 @@ export const QueryOperatorsResponse: MessageFns<QueryOperatorsResponse> = {
   fromPartial<I extends Exact<DeepPartial<QueryOperatorsResponse>, I>>(object: I): QueryOperatorsResponse {
     const message = createBaseQueryOperatorsResponse();
     message.operators = object.operators?.map((e) => OperatorInfo.fromPartial(e)) || [];
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
@@ -2305,13 +2295,16 @@ export const QueryLicenseDelegationResponse: MessageFns<QueryLicenseDelegationRe
 };
 
 function createBaseQueryDelegatedLicensesRequest(): QueryDelegatedLicensesRequest {
-  return { operator: "" };
+  return { operator: "", pagination: undefined };
 }
 
 export const QueryDelegatedLicensesRequest: MessageFns<QueryDelegatedLicensesRequest> = {
   encode(message: QueryDelegatedLicensesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.operator !== "") {
       writer.uint32(10).string(message.operator);
+    }
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -2331,6 +2324,14 @@ export const QueryDelegatedLicensesRequest: MessageFns<QueryDelegatedLicensesReq
           message.operator = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pagination = PageRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2341,13 +2342,19 @@ export const QueryDelegatedLicensesRequest: MessageFns<QueryDelegatedLicensesReq
   },
 
   fromJSON(object: any): QueryDelegatedLicensesRequest {
-    return { operator: isSet(object.operator) ? globalThis.String(object.operator) : "" };
+    return {
+      operator: isSet(object.operator) ? globalThis.String(object.operator) : "",
+      pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined,
+    };
   },
 
   toJSON(message: QueryDelegatedLicensesRequest): unknown {
     const obj: any = {};
     if (message.operator !== "") {
       obj.operator = message.operator;
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
     }
     return obj;
   },
@@ -2360,12 +2367,15 @@ export const QueryDelegatedLicensesRequest: MessageFns<QueryDelegatedLicensesReq
   ): QueryDelegatedLicensesRequest {
     const message = createBaseQueryDelegatedLicensesRequest();
     message.operator = object.operator ?? "";
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryDelegatedLicensesResponse(): QueryDelegatedLicensesResponse {
-  return { licenseIds: [] };
+  return { licenseIds: [], pagination: undefined };
 }
 
 export const QueryDelegatedLicensesResponse: MessageFns<QueryDelegatedLicensesResponse> = {
@@ -2378,6 +2388,9 @@ export const QueryDelegatedLicensesResponse: MessageFns<QueryDelegatedLicensesRe
       writer.uint64(v);
     }
     writer.join();
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
+    }
     return writer;
   },
 
@@ -2406,6 +2419,14 @@ export const QueryDelegatedLicensesResponse: MessageFns<QueryDelegatedLicensesRe
 
           break;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pagination = PageResponse.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2422,6 +2443,7 @@ export const QueryDelegatedLicensesResponse: MessageFns<QueryDelegatedLicensesRe
         : globalThis.Array.isArray(object?.license_ids)
         ? object.license_ids.map((e: any) => BigInt(e))
         : [],
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -2429,6 +2451,9 @@ export const QueryDelegatedLicensesResponse: MessageFns<QueryDelegatedLicensesRe
     const obj: any = {};
     if (message.licenseIds?.length) {
       obj.licenseIds = message.licenseIds.map((e) => e.toString());
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
     }
     return obj;
   },
@@ -2441,6 +2466,9 @@ export const QueryDelegatedLicensesResponse: MessageFns<QueryDelegatedLicensesRe
   ): QueryDelegatedLicensesResponse {
     const message = createBaseQueryDelegatedLicensesResponse();
     message.licenseIds = object.licenseIds?.map((e) => e) || [];
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };

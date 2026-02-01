@@ -36,8 +36,6 @@ export interface MsgSubmitWork {
   y: Uint8Array;
   /** proof is the VRF proof */
   proof: Uint8Array;
-  /** nonce for micro-PoW */
-  nonce: Uint8Array;
   /** submitter is the account submitting (can be different from owner) */
   submitter: string;
 }
@@ -56,8 +54,6 @@ export interface WorkSubmission {
   y: Uint8Array;
   /** proof is the VRF proof */
   proof: Uint8Array;
-  /** nonce for micro-PoW */
-  nonce: Uint8Array;
 }
 
 /**
@@ -350,14 +346,7 @@ export const MsgSetOwnerVrfKeyResponse: MessageFns<MsgSetOwnerVrfKeyResponse> = 
 };
 
 function createBaseMsgSubmitWork(): MsgSubmitWork {
-  return {
-    licenseId: 0n,
-    epoch: 0n,
-    y: new Uint8Array(0),
-    proof: new Uint8Array(0),
-    nonce: new Uint8Array(0),
-    submitter: "",
-  };
+  return { licenseId: 0n, epoch: 0n, y: new Uint8Array(0), proof: new Uint8Array(0), submitter: "" };
 }
 
 export const MsgSubmitWork: MessageFns<MsgSubmitWork> = {
@@ -379,9 +368,6 @@ export const MsgSubmitWork: MessageFns<MsgSubmitWork> = {
     }
     if (message.proof.length !== 0) {
       writer.uint32(34).bytes(message.proof);
-    }
-    if (message.nonce.length !== 0) {
-      writer.uint32(42).bytes(message.nonce);
     }
     if (message.submitter !== "") {
       writer.uint32(50).string(message.submitter);
@@ -428,14 +414,6 @@ export const MsgSubmitWork: MessageFns<MsgSubmitWork> = {
           message.proof = reader.bytes();
           continue;
         }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.nonce = reader.bytes();
-          continue;
-        }
         case 6: {
           if (tag !== 50) {
             break;
@@ -463,7 +441,6 @@ export const MsgSubmitWork: MessageFns<MsgSubmitWork> = {
       epoch: isSet(object.epoch) ? BigInt(object.epoch) : 0n,
       y: isSet(object.y) ? bytesFromBase64(object.y) : new Uint8Array(0),
       proof: isSet(object.proof) ? bytesFromBase64(object.proof) : new Uint8Array(0),
-      nonce: isSet(object.nonce) ? bytesFromBase64(object.nonce) : new Uint8Array(0),
       submitter: isSet(object.submitter) ? globalThis.String(object.submitter) : "",
     };
   },
@@ -482,9 +459,6 @@ export const MsgSubmitWork: MessageFns<MsgSubmitWork> = {
     if (message.proof.length !== 0) {
       obj.proof = base64FromBytes(message.proof);
     }
-    if (message.nonce.length !== 0) {
-      obj.nonce = base64FromBytes(message.nonce);
-    }
     if (message.submitter !== "") {
       obj.submitter = message.submitter;
     }
@@ -500,7 +474,6 @@ export const MsgSubmitWork: MessageFns<MsgSubmitWork> = {
     message.epoch = object.epoch ?? 0n;
     message.y = object.y ?? new Uint8Array(0);
     message.proof = object.proof ?? new Uint8Array(0);
-    message.nonce = object.nonce ?? new Uint8Array(0);
     message.submitter = object.submitter ?? "";
     return message;
   },
@@ -550,7 +523,7 @@ export const MsgSubmitWorkResponse: MessageFns<MsgSubmitWorkResponse> = {
 };
 
 function createBaseWorkSubmission(): WorkSubmission {
-  return { licenseId: 0n, epoch: 0n, y: new Uint8Array(0), proof: new Uint8Array(0), nonce: new Uint8Array(0) };
+  return { licenseId: 0n, epoch: 0n, y: new Uint8Array(0), proof: new Uint8Array(0) };
 }
 
 export const WorkSubmission: MessageFns<WorkSubmission> = {
@@ -572,9 +545,6 @@ export const WorkSubmission: MessageFns<WorkSubmission> = {
     }
     if (message.proof.length !== 0) {
       writer.uint32(34).bytes(message.proof);
-    }
-    if (message.nonce.length !== 0) {
-      writer.uint32(42).bytes(message.nonce);
     }
     return writer;
   },
@@ -618,14 +588,6 @@ export const WorkSubmission: MessageFns<WorkSubmission> = {
           message.proof = reader.bytes();
           continue;
         }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.nonce = reader.bytes();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -645,7 +607,6 @@ export const WorkSubmission: MessageFns<WorkSubmission> = {
       epoch: isSet(object.epoch) ? BigInt(object.epoch) : 0n,
       y: isSet(object.y) ? bytesFromBase64(object.y) : new Uint8Array(0),
       proof: isSet(object.proof) ? bytesFromBase64(object.proof) : new Uint8Array(0),
-      nonce: isSet(object.nonce) ? bytesFromBase64(object.nonce) : new Uint8Array(0),
     };
   },
 
@@ -663,9 +624,6 @@ export const WorkSubmission: MessageFns<WorkSubmission> = {
     if (message.proof.length !== 0) {
       obj.proof = base64FromBytes(message.proof);
     }
-    if (message.nonce.length !== 0) {
-      obj.nonce = base64FromBytes(message.nonce);
-    }
     return obj;
   },
 
@@ -678,7 +636,6 @@ export const WorkSubmission: MessageFns<WorkSubmission> = {
     message.epoch = object.epoch ?? 0n;
     message.y = object.y ?? new Uint8Array(0);
     message.proof = object.proof ?? new Uint8Array(0);
-    message.nonce = object.nonce ?? new Uint8Array(0);
     return message;
   },
 };

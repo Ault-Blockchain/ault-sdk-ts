@@ -7,7 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Timestamp } from "../../../google/protobuf/timestamp";
-import { License, Params, ProposalSnapshot } from "./license";
+import { License, Params, ProposalSnapshot, TransferRecord } from "./license";
 
 export const protobufPackage = "ault.license.v1";
 
@@ -56,6 +56,10 @@ export interface GenesisState {
   proposalSnapshots: ProposalSnapshotEntry[];
   /** vote_voting_powers stores cached voting power for votes */
   voteVotingPowers: VoteVotingPowerEntry[];
+  /** transfer_records stores license transfer history for snapshot queries */
+  transferRecords: TransferRecord[];
+  /** owner_active_counts maps owner addresses to their active license counts */
+  ownerActiveCounts: OwnerActiveCount[];
 }
 
 /** OwnerCount represents the count of licenses for an owner */
@@ -72,6 +76,14 @@ export interface OwnerIndex {
   owner: string;
   /** indices is the list of license IDs owned */
   indices: bigint[];
+}
+
+/** OwnerActiveCount represents the active license count for an owner */
+export interface OwnerActiveCount {
+  /** owner is the address */
+  owner: string;
+  /** count is the number of active licenses owned */
+  count: bigint;
 }
 
 /** ProposalSnapshotEntry represents a proposal snapshot for genesis export */
@@ -109,6 +121,8 @@ function createBaseGenesisState(): GenesisState {
     totalCapped: 0n,
     proposalSnapshots: [],
     voteVotingPowers: [],
+    transferRecords: [],
+    ownerActiveCounts: [],
   };
 }
 
@@ -173,6 +187,12 @@ export const GenesisState: MessageFns<GenesisState> = {
     }
     for (const v of message.voteVotingPowers) {
       VoteVotingPowerEntry.encode(v!, writer.uint32(122).fork()).join();
+    }
+    for (const v of message.transferRecords) {
+      TransferRecord.encode(v!, writer.uint32(130).fork()).join();
+    }
+    for (const v of message.ownerActiveCounts) {
+      OwnerActiveCount.encode(v!, writer.uint32(138).fork()).join();
     }
     return writer;
   },
@@ -304,6 +324,22 @@ export const GenesisState: MessageFns<GenesisState> = {
           message.voteVotingPowers.push(VoteVotingPowerEntry.decode(reader, reader.uint32()));
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.transferRecords.push(TransferRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.ownerActiveCounts.push(OwnerActiveCount.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -370,6 +406,16 @@ export const GenesisState: MessageFns<GenesisState> = {
         : globalThis.Array.isArray(object?.vote_voting_powers)
         ? object.vote_voting_powers.map((e: any) => VoteVotingPowerEntry.fromJSON(e))
         : [],
+      transferRecords: globalThis.Array.isArray(object?.transferRecords)
+        ? object.transferRecords.map((e: any) => TransferRecord.fromJSON(e))
+        : globalThis.Array.isArray(object?.transfer_records)
+        ? object.transfer_records.map((e: any) => TransferRecord.fromJSON(e))
+        : [],
+      ownerActiveCounts: globalThis.Array.isArray(object?.ownerActiveCounts)
+        ? object.ownerActiveCounts.map((e: any) => OwnerActiveCount.fromJSON(e))
+        : globalThis.Array.isArray(object?.owner_active_counts)
+        ? object.owner_active_counts.map((e: any) => OwnerActiveCount.fromJSON(e))
+        : [],
     };
   },
 
@@ -420,6 +466,12 @@ export const GenesisState: MessageFns<GenesisState> = {
     if (message.voteVotingPowers?.length) {
       obj.voteVotingPowers = message.voteVotingPowers.map((e) => VoteVotingPowerEntry.toJSON(e));
     }
+    if (message.transferRecords?.length) {
+      obj.transferRecords = message.transferRecords.map((e) => TransferRecord.toJSON(e));
+    }
+    if (message.ownerActiveCounts?.length) {
+      obj.ownerActiveCounts = message.ownerActiveCounts.map((e) => OwnerActiveCount.toJSON(e));
+    }
     return obj;
   },
 
@@ -445,6 +497,8 @@ export const GenesisState: MessageFns<GenesisState> = {
     message.totalCapped = object.totalCapped ?? 0n;
     message.proposalSnapshots = object.proposalSnapshots?.map((e) => ProposalSnapshotEntry.fromPartial(e)) || [];
     message.voteVotingPowers = object.voteVotingPowers?.map((e) => VoteVotingPowerEntry.fromPartial(e)) || [];
+    message.transferRecords = object.transferRecords?.map((e) => TransferRecord.fromPartial(e)) || [];
+    message.ownerActiveCounts = object.ownerActiveCounts?.map((e) => OwnerActiveCount.fromPartial(e)) || [];
     return message;
   },
 };
@@ -612,6 +666,85 @@ export const OwnerIndex: MessageFns<OwnerIndex> = {
     const message = createBaseOwnerIndex();
     message.owner = object.owner ?? "";
     message.indices = object.indices?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseOwnerActiveCount(): OwnerActiveCount {
+  return { owner: "", count: 0n };
+}
+
+export const OwnerActiveCount: MessageFns<OwnerActiveCount> = {
+  encode(message: OwnerActiveCount, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.owner !== "") {
+      writer.uint32(10).string(message.owner);
+    }
+    if (message.count !== 0n) {
+      if (BigInt.asUintN(64, message.count) !== message.count) {
+        throw new globalThis.Error("value provided for field message.count of type uint64 too large");
+      }
+      writer.uint32(16).uint64(message.count);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): OwnerActiveCount {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseOwnerActiveCount();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.owner = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.count = reader.uint64() as bigint;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OwnerActiveCount {
+    return {
+      owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
+      count: isSet(object.count) ? BigInt(object.count) : 0n,
+    };
+  },
+
+  toJSON(message: OwnerActiveCount): unknown {
+    const obj: any = {};
+    if (message.owner !== "") {
+      obj.owner = message.owner;
+    }
+    if (message.count !== 0n) {
+      obj.count = message.count.toString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<OwnerActiveCount>, I>>(base?: I): OwnerActiveCount {
+    return OwnerActiveCount.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<OwnerActiveCount>, I>>(object: I): OwnerActiveCount {
+    const message = createBaseOwnerActiveCount();
+    message.owner = object.owner ?? "";
+    message.count = object.count ?? 0n;
     return message;
   },
 };

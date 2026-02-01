@@ -1,8 +1,9 @@
 import { fetchRest, type RestContext, parseRestResponse } from "./context";
-import type { License, LicenseStatus, LicenseModuleParams } from "./types";
+import type { License, LicenseStatus, LicenseModuleParams, PageResponse, PaginationParams } from "./types";
 import {
   LicenseResponseSchema,
   LicensesResponseSchema,
+  LicensesByOwnerResponseSchema,
   BalanceResponseSchema,
   OwnerResponseSchema,
   TokenOfOwnerByIndexResponseSchema,
@@ -24,40 +25,37 @@ import { buildQuery } from "../core/query";
 export interface LicenseApi {
   getLicense: (id: string | number) => Promise<{ license: License }>;
   getLicenses: (params?: {
-    owner?: string;
     status?: LicenseStatus;
-    license_id_key?: string | number;
-    limit?: number;
-    ascending?: boolean;
-  }) => Promise<{ licenses: License[]; next_license_id?: string }>;
+    pagination?: PaginationParams;
+  }) => Promise<{ licenses: License[]; pagination?: PageResponse }>;
+  getLicensesByOwner: (
+    owner: string,
+    params?: { pagination?: PaginationParams },
+  ) => Promise<{ licenses: License[]; pagination?: PageResponse }>;
   getBalance: (owner: string) => Promise<{ balance: string }>;
   getOwner: (id: string | number) => Promise<{ owner: string }>;
   getTokenOfOwnerByIndex: (owner: string, index: number) => Promise<{ id: string }>;
   getOwnedBy: (
     owner: string,
-    params?: { license_id_key?: string | number; limit?: number },
+    params?: { pagination?: PaginationParams },
   ) => Promise<{
     license_ids: string[];
-    total: number;
-    next_license_id: string;
+    pagination?: PageResponse;
   }>;
   getLicensesByOwnerAll: (owner: string) => Promise<{ license_ids: string[]; total: number }>;
   getTotalSupply: () => Promise<{ total_supply: string }>;
   isActive: (id: string | number) => Promise<{ is_active: boolean }>;
   getParams: () => Promise<{ params: LicenseModuleParams }>;
   getMinters: (params?: {
-    address_key?: string;
-    limit?: number;
-  }) => Promise<{ minters: string[]; next_address: string }>;
+    pagination?: PaginationParams;
+  }) => Promise<{ minters: string[]; pagination?: PageResponse }>;
   getTransferUnlockTime: () => Promise<{ unlock_time: string }>;
   getKycApprovers: (params?: {
-    address_key?: string;
-    limit?: number;
-  }) => Promise<{ approvers: string[]; next_address: string }>;
+    pagination?: PaginationParams;
+  }) => Promise<{ approvers: string[]; pagination?: PageResponse }>;
   getApprovedMembers: (params?: {
-    address_key?: string;
-    limit?: number;
-  }) => Promise<{ members: string[]; next_address: string }>;
+    pagination?: PaginationParams;
+  }) => Promise<{ members: string[]; pagination?: PageResponse }>;
   isApprovedMember: (address: string) => Promise<{ is_approved: boolean }>;
   isKycApprover: (address: string) => Promise<{ is_approver: boolean }>;
   getActiveLicenseCountAt: (owner: string, snapshotTime: string) => Promise<{ count: string }>;
@@ -70,17 +68,25 @@ export function createLicenseApi(context: RestContext): LicenseApi {
     },
     async getLicenses(params = {}) {
       const query = buildQuery({
-        owner: params.owner,
         status: params.status,
-        license_id_key: params.license_id_key,
-        limit: params.limit,
-        ascending: params.ascending,
+        ...params.pagination,
       });
       return fetchRest(
         context,
         `/ault/license/v1/licenses${query}`,
         undefined,
         LicensesResponseSchema,
+      );
+    },
+    async getLicensesByOwner(owner, params = {}) {
+      const query = buildQuery({
+        ...params.pagination,
+      });
+      return fetchRest(
+        context,
+        `/ault/license/v1/licenses_by_owner/${owner}${query}`,
+        undefined,
+        LicensesByOwnerResponseSchema,
       );
     },
     async getBalance(owner) {
@@ -104,8 +110,7 @@ export function createLicenseApi(context: RestContext): LicenseApi {
     },
     async getOwnedBy(owner, params = {}) {
       const query = buildQuery({
-        license_id_key: params.license_id_key,
-        limit: params.limit,
+        ...params.pagination,
       });
       return fetchRest(
         context,
@@ -120,21 +125,23 @@ export function createLicenseApi(context: RestContext): LicenseApi {
         : context.restUrl;
       const limit = 1000;
       const { items, total } = await paginateAll<
-        { license_ids: string[]; next_license_id: string; total: number },
+        { license_ids: string[]; pagination?: PageResponse },
         string,
         string
       >({
         buildUrl: (cursor) => {
-          const query = buildQuery({ limit, license_id_key: cursor });
+          const query = buildQuery({
+            "pagination.limit": limit,
+            "pagination.key": cursor ?? undefined,
+          });
           return `${baseUrl}/ault/license/v1/owned_by/${owner}${query}`;
         },
         parseResponse: (data, url) => parseRestResponse(OwnedByResponseSchema, data, url),
         getItems: (res) => res.license_ids,
         getNextCursor: (res) => {
-          const next = res.next_license_id;
-          return next && next !== "0" ? next : null;
+          const next = res.pagination?.next_key;
+          return next && next !== "" ? next : null;
         },
-        getTotal: (res) => res.total,
         fetchOptions: context.fetchOptions,
         fetchFn: context.fetchFn,
       });
@@ -166,8 +173,7 @@ export function createLicenseApi(context: RestContext): LicenseApi {
     },
     async getMinters(params = {}) {
       const query = buildQuery({
-        address_key: params.address_key,
-        limit: params.limit,
+        ...params.pagination,
       });
       return fetchRest(
         context,
@@ -186,8 +192,7 @@ export function createLicenseApi(context: RestContext): LicenseApi {
     },
     async getKycApprovers(params = {}) {
       const query = buildQuery({
-        address_key: params.address_key,
-        limit: params.limit,
+        ...params.pagination,
       });
       return fetchRest(
         context,
@@ -198,8 +203,7 @@ export function createLicenseApi(context: RestContext): LicenseApi {
     },
     async getApprovedMembers(params = {}) {
       const query = buildQuery({
-        address_key: params.address_key,
-        limit: params.limit,
+        ...params.pagination,
       });
       return fetchRest(
         context,

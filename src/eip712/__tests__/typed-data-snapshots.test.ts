@@ -276,14 +276,12 @@ describe("Typed Data Snapshots", () => {
             epoch: 100n,
             y: base64ToBytes("eQ=="),
             proof: base64ToBytes("cA=="),
-            nonce: base64ToBytes("bg=="),
           },
           {
             licenseId: 2n,
             epoch: 100n,
             y: base64ToBytes("eQ=="),
             proof: base64ToBytes("cA=="),
-            nonce: base64ToBytes("bg=="),
           },
         ],
       });
@@ -299,10 +297,6 @@ describe("Typed Data Snapshots", () => {
           },
           {
             "name": "proof",
-            "type": "string",
-          },
-          {
-            "name": "nonce",
             "type": "string",
           },
           {

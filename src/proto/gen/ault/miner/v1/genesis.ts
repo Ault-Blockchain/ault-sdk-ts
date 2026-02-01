@@ -63,7 +63,13 @@ export interface GenesisState {
    * carryover_emission is accumulated emission from epochs with no eligible
    * payouts
    */
-  carryoverEmission: Coin | undefined;
+  carryoverEmission:
+    | Coin
+    | undefined;
+  /** all_time_credits contains accumulated credits per license */
+  allTimeCredits: AllTimeCreditsEntry[];
+  /** all_time_payouts contains accumulated payouts per license */
+  allTimePayouts: AllTimePayoutsEntry[];
 }
 
 /** LastSubmitEpoch tracks the last epoch a license submitted work */
@@ -135,6 +141,22 @@ export interface SignerRateLimitEntry {
   count: number;
 }
 
+/** AllTimeCreditsEntry tracks cumulative credits for a license */
+export interface AllTimeCreditsEntry {
+  /** license_id */
+  licenseId: bigint;
+  /** credits accumulated */
+  credits: bigint;
+}
+
+/** AllTimePayoutsEntry tracks cumulative payouts for a license */
+export interface AllTimePayoutsEntry {
+  /** license_id */
+  licenseId: bigint;
+  /** payout accumulated */
+  payout: string;
+}
+
 function createBaseGenesisState(): GenesisState {
   return {
     params: undefined,
@@ -156,6 +178,8 @@ function createBaseGenesisState(): GenesisState {
     lastDelegationEpochs: [],
     signerRateLimits: [],
     carryoverEmission: undefined,
+    allTimeCredits: [],
+    allTimePayouts: [],
   };
 }
 
@@ -226,6 +250,12 @@ export const GenesisState: MessageFns<GenesisState> = {
     }
     if (message.carryoverEmission !== undefined) {
       Coin.encode(message.carryoverEmission, writer.uint32(154).fork()).join();
+    }
+    for (const v of message.allTimeCredits) {
+      AllTimeCreditsEntry.encode(v!, writer.uint32(162).fork()).join();
+    }
+    for (const v of message.allTimePayouts) {
+      AllTimePayoutsEntry.encode(v!, writer.uint32(170).fork()).join();
     }
     return writer;
   },
@@ -389,6 +419,22 @@ export const GenesisState: MessageFns<GenesisState> = {
           message.carryoverEmission = Coin.decode(reader, reader.uint32());
           continue;
         }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.allTimeCredits.push(AllTimeCreditsEntry.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.allTimePayouts.push(AllTimePayoutsEntry.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -487,6 +533,16 @@ export const GenesisState: MessageFns<GenesisState> = {
         : isSet(object.carryover_emission)
         ? Coin.fromJSON(object.carryover_emission)
         : undefined,
+      allTimeCredits: globalThis.Array.isArray(object?.allTimeCredits)
+        ? object.allTimeCredits.map((e: any) => AllTimeCreditsEntry.fromJSON(e))
+        : globalThis.Array.isArray(object?.all_time_credits)
+        ? object.all_time_credits.map((e: any) => AllTimeCreditsEntry.fromJSON(e))
+        : [],
+      allTimePayouts: globalThis.Array.isArray(object?.allTimePayouts)
+        ? object.allTimePayouts.map((e: any) => AllTimePayoutsEntry.fromJSON(e))
+        : globalThis.Array.isArray(object?.all_time_payouts)
+        ? object.all_time_payouts.map((e: any) => AllTimePayoutsEntry.fromJSON(e))
+        : [],
     };
   },
 
@@ -549,6 +605,12 @@ export const GenesisState: MessageFns<GenesisState> = {
     if (message.carryoverEmission !== undefined) {
       obj.carryoverEmission = Coin.toJSON(message.carryoverEmission);
     }
+    if (message.allTimeCredits?.length) {
+      obj.allTimeCredits = message.allTimeCredits.map((e) => AllTimeCreditsEntry.toJSON(e));
+    }
+    if (message.allTimePayouts?.length) {
+      obj.allTimePayouts = message.allTimePayouts.map((e) => AllTimePayoutsEntry.toJSON(e));
+    }
     return obj;
   },
 
@@ -581,6 +643,8 @@ export const GenesisState: MessageFns<GenesisState> = {
     message.carryoverEmission = (object.carryoverEmission !== undefined && object.carryoverEmission !== null)
       ? Coin.fromPartial(object.carryoverEmission)
       : undefined;
+    message.allTimeCredits = object.allTimeCredits?.map((e) => AllTimeCreditsEntry.fromPartial(e)) || [];
+    message.allTimePayouts = object.allTimePayouts?.map((e) => AllTimePayoutsEntry.fromPartial(e)) || [];
     return message;
   },
 };
@@ -1251,6 +1315,175 @@ export const SignerRateLimitEntry: MessageFns<SignerRateLimitEntry> = {
     message.epoch = object.epoch ?? 0n;
     message.signer = object.signer ?? new Uint8Array(0);
     message.count = object.count ?? 0;
+    return message;
+  },
+};
+
+function createBaseAllTimeCreditsEntry(): AllTimeCreditsEntry {
+  return { licenseId: 0n, credits: 0n };
+}
+
+export const AllTimeCreditsEntry: MessageFns<AllTimeCreditsEntry> = {
+  encode(message: AllTimeCreditsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.licenseId !== 0n) {
+      if (BigInt.asUintN(64, message.licenseId) !== message.licenseId) {
+        throw new globalThis.Error("value provided for field message.licenseId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.licenseId);
+    }
+    if (message.credits !== 0n) {
+      if (BigInt.asUintN(64, message.credits) !== message.credits) {
+        throw new globalThis.Error("value provided for field message.credits of type uint64 too large");
+      }
+      writer.uint32(16).uint64(message.credits);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AllTimeCreditsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAllTimeCreditsEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.licenseId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.credits = reader.uint64() as bigint;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AllTimeCreditsEntry {
+    return {
+      licenseId: isSet(object.licenseId)
+        ? BigInt(object.licenseId)
+        : isSet(object.license_id)
+        ? BigInt(object.license_id)
+        : 0n,
+      credits: isSet(object.credits) ? BigInt(object.credits) : 0n,
+    };
+  },
+
+  toJSON(message: AllTimeCreditsEntry): unknown {
+    const obj: any = {};
+    if (message.licenseId !== 0n) {
+      obj.licenseId = message.licenseId.toString();
+    }
+    if (message.credits !== 0n) {
+      obj.credits = message.credits.toString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AllTimeCreditsEntry>, I>>(base?: I): AllTimeCreditsEntry {
+    return AllTimeCreditsEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AllTimeCreditsEntry>, I>>(object: I): AllTimeCreditsEntry {
+    const message = createBaseAllTimeCreditsEntry();
+    message.licenseId = object.licenseId ?? 0n;
+    message.credits = object.credits ?? 0n;
+    return message;
+  },
+};
+
+function createBaseAllTimePayoutsEntry(): AllTimePayoutsEntry {
+  return { licenseId: 0n, payout: "" };
+}
+
+export const AllTimePayoutsEntry: MessageFns<AllTimePayoutsEntry> = {
+  encode(message: AllTimePayoutsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.licenseId !== 0n) {
+      if (BigInt.asUintN(64, message.licenseId) !== message.licenseId) {
+        throw new globalThis.Error("value provided for field message.licenseId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.licenseId);
+    }
+    if (message.payout !== "") {
+      writer.uint32(18).string(message.payout);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AllTimePayoutsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAllTimePayoutsEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.licenseId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.payout = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AllTimePayoutsEntry {
+    return {
+      licenseId: isSet(object.licenseId)
+        ? BigInt(object.licenseId)
+        : isSet(object.license_id)
+        ? BigInt(object.license_id)
+        : 0n,
+      payout: isSet(object.payout) ? globalThis.String(object.payout) : "",
+    };
+  },
+
+  toJSON(message: AllTimePayoutsEntry): unknown {
+    const obj: any = {};
+    if (message.licenseId !== 0n) {
+      obj.licenseId = message.licenseId.toString();
+    }
+    if (message.payout !== "") {
+      obj.payout = message.payout;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AllTimePayoutsEntry>, I>>(base?: I): AllTimePayoutsEntry {
+    return AllTimePayoutsEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AllTimePayoutsEntry>, I>>(object: I): AllTimePayoutsEntry {
+    const message = createBaseAllTimePayoutsEntry();
+    message.licenseId = object.licenseId ?? 0n;
+    message.payout = object.payout ?? "";
     return message;
   },
 };

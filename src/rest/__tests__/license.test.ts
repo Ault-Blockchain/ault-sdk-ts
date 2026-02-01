@@ -25,7 +25,7 @@ describe("LicenseApi", () => {
     allow_metadata_update: true,
     admin_can_revoke: true,
     admin_can_burn: true,
-    max_batch_mint_size: 100,
+    max_batch_size: 100,
     transfer_unlock_days: 365,
     enable_transfers: true,
     minter_allowed_msgs: ["/ault.license.v1.MsgMintLicense"],
@@ -82,24 +82,19 @@ describe("LicenseApi", () => {
     });
 
     it("includes query params when provided", async () => {
-      mockFetch = createMockFetch(mockJsonResponse({ licenses: [], next_license_id: "10" }));
+      mockFetch = createMockFetch(mockJsonResponse({ licenses: [] }));
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);
 
       await api.getLicenses({
-        owner: "ault1test",
         status: "LICENSE_STATUS_ACTIVE",
-        license_id_key: "5",
-        limit: 10,
-        ascending: true,
+        pagination: { "pagination.limit": 10, "pagination.reverse": true },
       });
 
       const url = mockFetch.mock.calls[0][0];
-      expect(url).toContain("owner=ault1test");
       expect(url).toContain("status=LICENSE_STATUS_ACTIVE");
-      expect(url).toContain("license_id_key=5");
-      expect(url).toContain("limit=10");
-      expect(url).toContain("ascending=true");
+      expect(url).toContain("pagination.limit=10");
+      expect(url).toContain("pagination.reverse=true");
     });
 
     it("omits undefined params", async () => {
@@ -107,12 +102,48 @@ describe("LicenseApi", () => {
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);
 
-      await api.getLicenses({ owner: "ault1test" });
+      await api.getLicenses({ status: "LICENSE_STATUS_ACTIVE" });
 
       const url = mockFetch.mock.calls[0][0];
-      expect(url).toContain("owner=ault1test");
-      expect(url).not.toContain("status=");
-      expect(url).not.toContain("limit=");
+      expect(url).toContain("status=LICENSE_STATUS_ACTIVE");
+      expect(url).not.toContain("pagination.limit=");
+    });
+  });
+
+  describe("getLicensesByOwner", () => {
+    it("fetches licenses by owner", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({
+          licenses: [sampleLicense],
+          pagination: { next_key: "", total: "1" },
+        }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      const result = await api.getLicensesByOwner("ault1owner");
+
+      expect(result.licenses).toHaveLength(1);
+      expect(result.licenses[0]).toEqual(sampleLicense);
+      expect(mockFetch.mock.calls[0][0]).toBe(
+        "https://api.example.com/ault/license/v1/licenses_by_owner/ault1owner",
+      );
+    });
+
+    it("includes pagination params", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ licenses: [], pagination: { next_key: "" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      await api.getLicensesByOwner("ault1owner", {
+        pagination: { "pagination.limit": 25, "pagination.key": "xyz" },
+      });
+
+      const url = mockFetch.mock.calls[0][0];
+      expect(url).toContain("pagination.limit=25");
+      expect(url).toContain("pagination.key=xyz");
     });
   });
 
@@ -164,8 +195,7 @@ describe("LicenseApi", () => {
       mockFetch = createMockFetch(
         mockJsonResponse({
           license_ids: ["1", "2", "3"],
-          total: 3,
-          next_license_id: "0",
+          pagination: { next_key: "", total: "3" },
         }),
       );
       context.fetchFn = mockFetch;
@@ -174,7 +204,6 @@ describe("LicenseApi", () => {
       const result = await api.getOwnedBy("ault1owner");
 
       expect(result.license_ids).toEqual(["1", "2", "3"]);
-      expect(result.total).toBe(3);
       expect(mockFetch.mock.calls[0][0]).toBe(
         "https://api.example.com/ault/license/v1/owned_by/ault1owner",
       );
@@ -182,25 +211,27 @@ describe("LicenseApi", () => {
 
     it("includes pagination params", async () => {
       mockFetch = createMockFetch(
-        mockJsonResponse({ license_ids: [], total: 0, next_license_id: "0" }),
+        mockJsonResponse({ license_ids: [], pagination: { next_key: "" } }),
       );
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);
 
-      await api.getOwnedBy("ault1owner", { license_id_key: "10", limit: 50 });
+      await api.getOwnedBy("ault1owner", {
+        pagination: { "pagination.limit": 50, "pagination.key": "abc" },
+      });
 
       const url = mockFetch.mock.calls[0][0];
-      expect(url).toContain("license_id_key=10");
-      expect(url).toContain("limit=50");
+      expect(url).toContain("pagination.limit=50");
+      expect(url).toContain("pagination.key=abc");
     });
   });
 
   describe("getLicensesByOwnerAll", () => {
     it("paginates through all licenses", async () => {
       mockFetch = createMockFetch([
-        mockJsonResponse({ license_ids: ["1", "2"], total: 5, next_license_id: "3" }),
-        mockJsonResponse({ license_ids: ["3", "4"], total: 5, next_license_id: "5" }),
-        mockJsonResponse({ license_ids: ["5"], total: 5, next_license_id: "0" }),
+        mockJsonResponse({ license_ids: ["1", "2"], pagination: { next_key: "abc", total: "5" } }),
+        mockJsonResponse({ license_ids: ["3", "4"], pagination: { next_key: "def", total: "5" } }),
+        mockJsonResponse({ license_ids: ["5"], pagination: { next_key: "" } }),
       ]);
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);
@@ -214,7 +245,7 @@ describe("LicenseApi", () => {
 
     it("handles empty result", async () => {
       mockFetch = createMockFetch(
-        mockJsonResponse({ license_ids: [], total: 0, next_license_id: "0" }),
+        mockJsonResponse({ license_ids: [], pagination: { next_key: "" } }),
       );
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);
@@ -274,7 +305,7 @@ describe("LicenseApi", () => {
   describe("getMinters", () => {
     it("fetches minters list", async () => {
       mockFetch = createMockFetch(
-        mockJsonResponse({ minters: ["ault1m1", "ault1m2"], next_address: "" }),
+        mockJsonResponse({ minters: ["ault1m1", "ault1m2"] }),
       );
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);
@@ -286,15 +317,17 @@ describe("LicenseApi", () => {
     });
 
     it("includes pagination params", async () => {
-      mockFetch = createMockFetch(mockJsonResponse({ minters: [], next_address: "" }));
+      mockFetch = createMockFetch(mockJsonResponse({ minters: [] }));
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);
 
-      await api.getMinters({ address_key: "ault1abc", limit: 10 });
+      await api.getMinters({
+        pagination: { "pagination.key": "abc", "pagination.limit": 10 },
+      });
 
       const url = mockFetch.mock.calls[0][0];
-      expect(url).toContain("address_key=ault1abc");
-      expect(url).toContain("limit=10");
+      expect(url).toContain("pagination.key=abc");
+      expect(url).toContain("pagination.limit=10");
     });
   });
 
@@ -312,7 +345,7 @@ describe("LicenseApi", () => {
 
   describe("getKycApprovers", () => {
     it("fetches KYC approvers list", async () => {
-      mockFetch = createMockFetch(mockJsonResponse({ approvers: ["ault1kyc1"], next_address: "" }));
+      mockFetch = createMockFetch(mockJsonResponse({ approvers: ["ault1kyc1"] }));
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);
 
@@ -325,7 +358,7 @@ describe("LicenseApi", () => {
   describe("getApprovedMembers", () => {
     it("fetches approved members list", async () => {
       mockFetch = createMockFetch(
-        mockJsonResponse({ members: ["ault1member1"], next_address: "" }),
+        mockJsonResponse({ members: ["ault1member1"] }),
       );
       context.fetchFn = mockFetch;
       api = createLicenseApi(context);

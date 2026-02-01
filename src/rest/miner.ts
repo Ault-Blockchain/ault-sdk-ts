@@ -10,6 +10,8 @@ import type {
   YearEmission,
   LicensePayouts,
   MinerModuleParams,
+  PageResponse,
+  PaginationParams,
 } from "./types";
 import {
   CurrentEpochResponseSchema,
@@ -41,17 +43,20 @@ export interface MinerApi {
   getEmissionSchedule: () => Promise<{ schedule: YearEmission[] }>;
   getEpochInfo: (epoch: string | number) => Promise<{ info: EpochInfo }>;
   getEpochs: (params?: {
-    epoch_key?: string | number;
-    limit?: number;
-    ascending?: boolean;
-  }) => Promise<{ epochs: EpochInfo[]; next_epoch_key?: string }>;
+    pagination?: PaginationParams;
+  }) => Promise<{ epochs: EpochInfo[]; pagination?: PageResponse }>;
   getEpochsAll: () => Promise<{ epochs: EpochInfo[]; total: number }>;
   getOperator: (operator: string) => Promise<{ operator: Operator | null }>;
-  getOperators: () => Promise<{ operators: Operator[] }>;
+  getOperators: (params?: {
+    pagination?: PaginationParams;
+  }) => Promise<{ operators: Operator[]; pagination?: PageResponse }>;
   getLicenseDelegation: (
     licenseId: string | number,
   ) => Promise<{ delegation: MiningDelegation | null; is_delegated: boolean }>;
-  getDelegatedLicenses: (operator: string) => Promise<{ license_ids: string[] }>;
+  getDelegatedLicenses: (
+    operator: string,
+    params?: { pagination?: PaginationParams },
+  ) => Promise<{ license_ids: string[]; pagination?: PageResponse }>;
   getLicensePayouts: (
     licenseId: string | number,
     params?: { fromEpoch?: string | number; toEpoch?: string | number },
@@ -111,20 +116,14 @@ export function createMinerApi(context: RestContext): MinerApi {
     },
     async getEpochs(params = {}) {
       const query = buildQuery({
-        epoch_key: params.epoch_key,
-        limit: params.limit,
-        ascending: params.ascending,
+        ...params.pagination,
       });
-      const response = await fetchRest(
+      return fetchRest(
         context,
         `/ault/miner/v1/epochs${query}`,
         undefined,
         EpochsResponseSchema,
       );
-      return {
-        epochs: response.epochs ?? [],
-        next_epoch_key: response.next_epoch_key ?? response.nextEpochKey,
-      };
     },
     async getEpochsAll() {
       const baseUrl = context.restUrl.endsWith("/")
@@ -133,14 +132,17 @@ export function createMinerApi(context: RestContext): MinerApi {
       const limit = 1000;
       const { items, total } = await paginateAll<EpochsResponse, EpochInfo, string>({
         buildUrl: (cursor) => {
-          const query = buildQuery({ limit, epoch_key: cursor });
+          const query = buildQuery({
+            "pagination.limit": limit,
+            "pagination.key": cursor ?? undefined,
+          });
           return `${baseUrl}/ault/miner/v1/epochs${query}`;
         },
         parseResponse: (data, url) => parseRestResponse(EpochsResponseSchema, data, url),
         getItems: (res) => res.epochs,
         getNextCursor: (res) => {
-          const next = res.next_epoch_key ?? res.nextEpochKey ?? res.next_epoch;
-          return next && next !== "0" ? next : null;
+          const next = res.pagination?.next_key;
+          return next && next !== "" ? next : null;
         },
         fetchOptions: context.fetchOptions,
         fetchFn: context.fetchFn,
@@ -163,8 +165,16 @@ export function createMinerApi(context: RestContext): MinerApi {
         throw error;
       }
     },
-    async getOperators() {
-      return fetchRest(context, "/cosmos/miner/v1/operators", undefined, OperatorsResponseSchema);
+    async getOperators(params = {}) {
+      const query = buildQuery({
+        ...params.pagination,
+      });
+      return fetchRest(
+        context,
+        `/cosmos/miner/v1/operators${query}`,
+        undefined,
+        OperatorsResponseSchema,
+      );
     },
     async getLicenseDelegation(licenseId) {
       try {
@@ -185,10 +195,13 @@ export function createMinerApi(context: RestContext): MinerApi {
         throw error;
       }
     },
-    async getDelegatedLicenses(operator) {
+    async getDelegatedLicenses(operator, params = {}) {
+      const query = buildQuery({
+        ...params.pagination,
+      });
       return fetchRest(
         context,
-        `/cosmos/miner/v1/operator/${operator}/licenses`,
+        `/cosmos/miner/v1/operator/${operator}/licenses${query}`,
         undefined,
         DelegatedLicensesResponseSchema,
       );

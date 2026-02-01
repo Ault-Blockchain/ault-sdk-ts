@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { PageRequest, PageResponse } from "../../../cosmos/base/query/v1beta1/pagination";
 import { Timestamp } from "../../../google/protobuf/timestamp";
 import { License, LicenseStatus, licenseStatusFromJSON, licenseStatusToJSON, Params } from "./license";
 
@@ -25,30 +26,37 @@ export interface QueryLicenseResponse {
 
 /** QueryLicensesRequest is the request for the Licenses RPC method */
 export interface QueryLicensesRequest {
-  /** owner filters licenses by owner address (optional) */
-  owner: string;
   /** status filters licenses by status (optional) */
   status: LicenseStatus;
-  /**
-   * license_id_key is the cursor for pagination (0 means start from beginning
-   * if ascending, or end if descending)
-   */
-  licenseIdKey: bigint;
-  /** limit is the maximum number of licenses to return (default: 100) */
-  limit: number;
-  /**
-   * ascending determines iteration direction (default: false, meaning
-   * descending)
-   */
-  ascending: boolean;
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
 }
 
 /** QueryLicensesResponse is the response for the Licenses RPC method */
 export interface QueryLicensesResponse {
   /** licenses is the list of licenses */
   licenses: License[];
-  /** next_license_id is the cursor for the next page (0 means no more results) */
-  nextLicenseId: bigint;
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
+}
+
+/** QueryLicensesByOwnerRequest is the request for the LicensesByOwner RPC method */
+export interface QueryLicensesByOwnerRequest {
+  /** owner is the address to query licenses for */
+  owner: string;
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
+}
+
+/**
+ * QueryLicensesByOwnerResponse is the response for the LicensesByOwner RPC
+ * method
+ */
+export interface QueryLicensesByOwnerResponse {
+  /** licenses is the list of licenses owned by the address */
+  licenses: License[];
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
 }
 
 /** QueryBalanceRequest is the request for the BalanceOf RPC method */
@@ -99,23 +107,16 @@ export interface QueryTokenByOwnerIndexResponse {
 export interface QueryOwnedByRequest {
   /** owner is the address to query licenses for */
   owner: string;
-  /** license_id_key is the cursor for pagination (0 means start from beginning) */
-  licenseIdKey: bigint;
-  /**
-   * limit is the maximum number of license IDs to return (default: 100, max:
-   * 1000)
-   */
-  limit: number;
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
 }
 
 /** QueryOwnedByResponse is the response for the OwnedBy RPC method */
 export interface QueryOwnedByResponse {
   /** license_ids is the list of license IDs owned by the address */
   licenseIds: bigint[];
-  /** total is the total number of licenses owned */
-  total: number;
-  /** next_license_id is the cursor for the next page (0 means no more results) */
-  nextLicenseId: bigint;
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
 }
 
 /** QueryTotalSupplyRequest is the request for the TotalSupply RPC method */
@@ -152,46 +153,30 @@ export interface QueryParamsResponse {
 
 /** QueryMintersRequest is the request for the Minters RPC method */
 export interface QueryMintersRequest {
-  /**
-   * address_key is the cursor for pagination (empty string means start from
-   * beginning)
-   */
-  addressKey: string;
-  /** limit is the maximum number of minters to return (default: 100) */
-  limit: number;
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
 }
 
 /** QueryMintersResponse is the response for the Minters RPC method */
 export interface QueryMintersResponse {
   /** minters is the list of authorized minter addresses */
   minters: string[];
-  /**
-   * next_address is the cursor for the next page (empty string means no more
-   * results)
-   */
-  nextAddress: string;
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
 }
 
 /** QueryKYCApproversRequest is the request for the KYCApprovers RPC method */
 export interface QueryKYCApproversRequest {
-  /**
-   * address_key is the cursor for pagination (empty string means start from
-   * beginning)
-   */
-  addressKey: string;
-  /** limit is the maximum number of approvers to return (default: 100) */
-  limit: number;
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
 }
 
 /** QueryKYCApproversResponse is the response for the KYCApprovers RPC method */
 export interface QueryKYCApproversResponse {
   /** approvers is the list of authorized KYC approver addresses */
   approvers: string[];
-  /**
-   * next_address is the cursor for the next page (empty string means no more
-   * results)
-   */
-  nextAddress: string;
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
 }
 
 /**
@@ -212,13 +197,8 @@ export interface QueryTransferUnlockTimeResponse {
 
 /** QueryApprovedMembersRequest is the request for the ApprovedMembers RPC method */
 export interface QueryApprovedMembersRequest {
-  /**
-   * address_key is the cursor for pagination (empty string means start from
-   * beginning)
-   */
-  addressKey: string;
-  /** limit is the maximum number of members to return (default: 100) */
-  limit: number;
+  /** pagination defines the pagination in the request */
+  pagination: PageRequest | undefined;
 }
 
 /**
@@ -228,11 +208,8 @@ export interface QueryApprovedMembersRequest {
 export interface QueryApprovedMembersResponse {
   /** members is the list of approved DAO member addresses */
   members: string[];
-  /**
-   * next_address is the cursor for the next page (empty string means no more
-   * results)
-   */
-  nextAddress: string;
+  /** pagination defines the pagination in the response */
+  pagination: PageResponse | undefined;
 }
 
 /**
@@ -407,28 +384,16 @@ export const QueryLicenseResponse: MessageFns<QueryLicenseResponse> = {
 };
 
 function createBaseQueryLicensesRequest(): QueryLicensesRequest {
-  return { owner: "", status: 0, licenseIdKey: 0n, limit: 0, ascending: false };
+  return { status: 0, pagination: undefined };
 }
 
 export const QueryLicensesRequest: MessageFns<QueryLicensesRequest> = {
   encode(message: QueryLicensesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.owner !== "") {
-      writer.uint32(10).string(message.owner);
-    }
     if (message.status !== 0) {
-      writer.uint32(16).int32(message.status);
+      writer.uint32(8).int32(message.status);
     }
-    if (message.licenseIdKey !== 0n) {
-      if (BigInt.asUintN(64, message.licenseIdKey) !== message.licenseIdKey) {
-        throw new globalThis.Error("value provided for field message.licenseIdKey of type uint64 too large");
-      }
-      writer.uint32(24).uint64(message.licenseIdKey);
-    }
-    if (message.limit !== 0) {
-      writer.uint32(32).uint32(message.limit);
-    }
-    if (message.ascending !== false) {
-      writer.uint32(40).bool(message.ascending);
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -441,43 +406,19 @@ export const QueryLicensesRequest: MessageFns<QueryLicensesRequest> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.owner = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
+          if (tag !== 8) {
             break;
           }
 
           message.status = reader.int32() as any;
           continue;
         }
-        case 3: {
-          if (tag !== 24) {
+        case 2: {
+          if (tag !== 18) {
             break;
           }
 
-          message.licenseIdKey = reader.uint64() as bigint;
-          continue;
-        }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.limit = reader.uint32();
-          continue;
-        }
-        case 5: {
-          if (tag !== 40) {
-            break;
-          }
-
-          message.ascending = reader.bool();
+          message.pagination = PageRequest.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -491,34 +432,18 @@ export const QueryLicensesRequest: MessageFns<QueryLicensesRequest> = {
 
   fromJSON(object: any): QueryLicensesRequest {
     return {
-      owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
       status: isSet(object.status) ? licenseStatusFromJSON(object.status) : 0,
-      licenseIdKey: isSet(object.licenseIdKey)
-        ? BigInt(object.licenseIdKey)
-        : isSet(object.license_id_key)
-        ? BigInt(object.license_id_key)
-        : 0n,
-      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
-      ascending: isSet(object.ascending) ? globalThis.Boolean(object.ascending) : false,
+      pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined,
     };
   },
 
   toJSON(message: QueryLicensesRequest): unknown {
     const obj: any = {};
-    if (message.owner !== "") {
-      obj.owner = message.owner;
-    }
     if (message.status !== 0) {
       obj.status = licenseStatusToJSON(message.status);
     }
-    if (message.licenseIdKey !== 0n) {
-      obj.licenseIdKey = message.licenseIdKey.toString();
-    }
-    if (message.limit !== 0) {
-      obj.limit = Math.round(message.limit);
-    }
-    if (message.ascending !== false) {
-      obj.ascending = message.ascending;
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
     }
     return obj;
   },
@@ -528,17 +453,16 @@ export const QueryLicensesRequest: MessageFns<QueryLicensesRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<QueryLicensesRequest>, I>>(object: I): QueryLicensesRequest {
     const message = createBaseQueryLicensesRequest();
-    message.owner = object.owner ?? "";
     message.status = object.status ?? 0;
-    message.licenseIdKey = object.licenseIdKey ?? 0n;
-    message.limit = object.limit ?? 0;
-    message.ascending = object.ascending ?? false;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryLicensesResponse(): QueryLicensesResponse {
-  return { licenses: [], nextLicenseId: 0n };
+  return { licenses: [], pagination: undefined };
 }
 
 export const QueryLicensesResponse: MessageFns<QueryLicensesResponse> = {
@@ -546,11 +470,8 @@ export const QueryLicensesResponse: MessageFns<QueryLicensesResponse> = {
     for (const v of message.licenses) {
       License.encode(v!, writer.uint32(10).fork()).join();
     }
-    if (message.nextLicenseId !== 0n) {
-      if (BigInt.asUintN(64, message.nextLicenseId) !== message.nextLicenseId) {
-        throw new globalThis.Error("value provided for field message.nextLicenseId of type uint64 too large");
-      }
-      writer.uint32(16).uint64(message.nextLicenseId);
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -571,11 +492,11 @@ export const QueryLicensesResponse: MessageFns<QueryLicensesResponse> = {
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.nextLicenseId = reader.uint64() as bigint;
+          message.pagination = PageResponse.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -590,11 +511,7 @@ export const QueryLicensesResponse: MessageFns<QueryLicensesResponse> = {
   fromJSON(object: any): QueryLicensesResponse {
     return {
       licenses: globalThis.Array.isArray(object?.licenses) ? object.licenses.map((e: any) => License.fromJSON(e)) : [],
-      nextLicenseId: isSet(object.nextLicenseId)
-        ? BigInt(object.nextLicenseId)
-        : isSet(object.next_license_id)
-        ? BigInt(object.next_license_id)
-        : 0n,
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -603,8 +520,8 @@ export const QueryLicensesResponse: MessageFns<QueryLicensesResponse> = {
     if (message.licenses?.length) {
       obj.licenses = message.licenses.map((e) => License.toJSON(e));
     }
-    if (message.nextLicenseId !== 0n) {
-      obj.nextLicenseId = message.nextLicenseId.toString();
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
     }
     return obj;
   },
@@ -615,7 +532,165 @@ export const QueryLicensesResponse: MessageFns<QueryLicensesResponse> = {
   fromPartial<I extends Exact<DeepPartial<QueryLicensesResponse>, I>>(object: I): QueryLicensesResponse {
     const message = createBaseQueryLicensesResponse();
     message.licenses = object.licenses?.map((e) => License.fromPartial(e)) || [];
-    message.nextLicenseId = object.nextLicenseId ?? 0n;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQueryLicensesByOwnerRequest(): QueryLicensesByOwnerRequest {
+  return { owner: "", pagination: undefined };
+}
+
+export const QueryLicensesByOwnerRequest: MessageFns<QueryLicensesByOwnerRequest> = {
+  encode(message: QueryLicensesByOwnerRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.owner !== "") {
+      writer.uint32(10).string(message.owner);
+    }
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryLicensesByOwnerRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryLicensesByOwnerRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.owner = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pagination = PageRequest.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryLicensesByOwnerRequest {
+    return {
+      owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
+      pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined,
+    };
+  },
+
+  toJSON(message: QueryLicensesByOwnerRequest): unknown {
+    const obj: any = {};
+    if (message.owner !== "") {
+      obj.owner = message.owner;
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryLicensesByOwnerRequest>, I>>(base?: I): QueryLicensesByOwnerRequest {
+    return QueryLicensesByOwnerRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryLicensesByOwnerRequest>, I>>(object: I): QueryLicensesByOwnerRequest {
+    const message = createBaseQueryLicensesByOwnerRequest();
+    message.owner = object.owner ?? "";
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQueryLicensesByOwnerResponse(): QueryLicensesByOwnerResponse {
+  return { licenses: [], pagination: undefined };
+}
+
+export const QueryLicensesByOwnerResponse: MessageFns<QueryLicensesByOwnerResponse> = {
+  encode(message: QueryLicensesByOwnerResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.licenses) {
+      License.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryLicensesByOwnerResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryLicensesByOwnerResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.licenses.push(License.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pagination = PageResponse.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryLicensesByOwnerResponse {
+    return {
+      licenses: globalThis.Array.isArray(object?.licenses) ? object.licenses.map((e: any) => License.fromJSON(e)) : [],
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
+    };
+  },
+
+  toJSON(message: QueryLicensesByOwnerResponse): unknown {
+    const obj: any = {};
+    if (message.licenses?.length) {
+      obj.licenses = message.licenses.map((e) => License.toJSON(e));
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryLicensesByOwnerResponse>, I>>(base?: I): QueryLicensesByOwnerResponse {
+    return QueryLicensesByOwnerResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryLicensesByOwnerResponse>, I>>(object: I): QueryLicensesByOwnerResponse {
+    const message = createBaseQueryLicensesByOwnerResponse();
+    message.licenses = object.licenses?.map((e) => License.fromPartial(e)) || [];
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
@@ -1003,7 +1078,7 @@ export const QueryTokenByOwnerIndexResponse: MessageFns<QueryTokenByOwnerIndexRe
 };
 
 function createBaseQueryOwnedByRequest(): QueryOwnedByRequest {
-  return { owner: "", licenseIdKey: 0n, limit: 0 };
+  return { owner: "", pagination: undefined };
 }
 
 export const QueryOwnedByRequest: MessageFns<QueryOwnedByRequest> = {
@@ -1011,14 +1086,8 @@ export const QueryOwnedByRequest: MessageFns<QueryOwnedByRequest> = {
     if (message.owner !== "") {
       writer.uint32(10).string(message.owner);
     }
-    if (message.licenseIdKey !== 0n) {
-      if (BigInt.asUintN(64, message.licenseIdKey) !== message.licenseIdKey) {
-        throw new globalThis.Error("value provided for field message.licenseIdKey of type uint64 too large");
-      }
-      writer.uint32(16).uint64(message.licenseIdKey);
-    }
-    if (message.limit !== 0) {
-      writer.uint32(24).uint32(message.limit);
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -1039,19 +1108,11 @@ export const QueryOwnedByRequest: MessageFns<QueryOwnedByRequest> = {
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.licenseIdKey = reader.uint64() as bigint;
-          continue;
-        }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.limit = reader.uint32();
+          message.pagination = PageRequest.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1066,12 +1127,7 @@ export const QueryOwnedByRequest: MessageFns<QueryOwnedByRequest> = {
   fromJSON(object: any): QueryOwnedByRequest {
     return {
       owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
-      licenseIdKey: isSet(object.licenseIdKey)
-        ? BigInt(object.licenseIdKey)
-        : isSet(object.license_id_key)
-        ? BigInt(object.license_id_key)
-        : 0n,
-      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
+      pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -1080,11 +1136,8 @@ export const QueryOwnedByRequest: MessageFns<QueryOwnedByRequest> = {
     if (message.owner !== "") {
       obj.owner = message.owner;
     }
-    if (message.licenseIdKey !== 0n) {
-      obj.licenseIdKey = message.licenseIdKey.toString();
-    }
-    if (message.limit !== 0) {
-      obj.limit = Math.round(message.limit);
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
     }
     return obj;
   },
@@ -1095,14 +1148,15 @@ export const QueryOwnedByRequest: MessageFns<QueryOwnedByRequest> = {
   fromPartial<I extends Exact<DeepPartial<QueryOwnedByRequest>, I>>(object: I): QueryOwnedByRequest {
     const message = createBaseQueryOwnedByRequest();
     message.owner = object.owner ?? "";
-    message.licenseIdKey = object.licenseIdKey ?? 0n;
-    message.limit = object.limit ?? 0;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryOwnedByResponse(): QueryOwnedByResponse {
-  return { licenseIds: [], total: 0, nextLicenseId: 0n };
+  return { licenseIds: [], pagination: undefined };
 }
 
 export const QueryOwnedByResponse: MessageFns<QueryOwnedByResponse> = {
@@ -1115,14 +1169,8 @@ export const QueryOwnedByResponse: MessageFns<QueryOwnedByResponse> = {
       writer.uint64(v);
     }
     writer.join();
-    if (message.total !== 0) {
-      writer.uint32(16).uint32(message.total);
-    }
-    if (message.nextLicenseId !== 0n) {
-      if (BigInt.asUintN(64, message.nextLicenseId) !== message.nextLicenseId) {
-        throw new globalThis.Error("value provided for field message.nextLicenseId of type uint64 too large");
-      }
-      writer.uint32(24).uint64(message.nextLicenseId);
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -1153,19 +1201,11 @@ export const QueryOwnedByResponse: MessageFns<QueryOwnedByResponse> = {
           break;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.total = reader.uint32();
-          continue;
-        }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.nextLicenseId = reader.uint64() as bigint;
+          message.pagination = PageResponse.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1184,12 +1224,7 @@ export const QueryOwnedByResponse: MessageFns<QueryOwnedByResponse> = {
         : globalThis.Array.isArray(object?.license_ids)
         ? object.license_ids.map((e: any) => BigInt(e))
         : [],
-      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
-      nextLicenseId: isSet(object.nextLicenseId)
-        ? BigInt(object.nextLicenseId)
-        : isSet(object.next_license_id)
-        ? BigInt(object.next_license_id)
-        : 0n,
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -1198,11 +1233,8 @@ export const QueryOwnedByResponse: MessageFns<QueryOwnedByResponse> = {
     if (message.licenseIds?.length) {
       obj.licenseIds = message.licenseIds.map((e) => e.toString());
     }
-    if (message.total !== 0) {
-      obj.total = Math.round(message.total);
-    }
-    if (message.nextLicenseId !== 0n) {
-      obj.nextLicenseId = message.nextLicenseId.toString();
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
     }
     return obj;
   },
@@ -1213,8 +1245,9 @@ export const QueryOwnedByResponse: MessageFns<QueryOwnedByResponse> = {
   fromPartial<I extends Exact<DeepPartial<QueryOwnedByResponse>, I>>(object: I): QueryOwnedByResponse {
     const message = createBaseQueryOwnedByResponse();
     message.licenseIds = object.licenseIds?.map((e) => e) || [];
-    message.total = object.total ?? 0;
-    message.nextLicenseId = object.nextLicenseId ?? 0n;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
@@ -1558,16 +1591,13 @@ export const QueryParamsResponse: MessageFns<QueryParamsResponse> = {
 };
 
 function createBaseQueryMintersRequest(): QueryMintersRequest {
-  return { addressKey: "", limit: 0 };
+  return { pagination: undefined };
 }
 
 export const QueryMintersRequest: MessageFns<QueryMintersRequest> = {
   encode(message: QueryMintersRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.addressKey !== "") {
-      writer.uint32(10).string(message.addressKey);
-    }
-    if (message.limit !== 0) {
-      writer.uint32(16).uint32(message.limit);
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -1584,15 +1614,7 @@ export const QueryMintersRequest: MessageFns<QueryMintersRequest> = {
             break;
           }
 
-          message.addressKey = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.limit = reader.uint32();
+          message.pagination = PageRequest.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1605,23 +1627,13 @@ export const QueryMintersRequest: MessageFns<QueryMintersRequest> = {
   },
 
   fromJSON(object: any): QueryMintersRequest {
-    return {
-      addressKey: isSet(object.addressKey)
-        ? globalThis.String(object.addressKey)
-        : isSet(object.address_key)
-        ? globalThis.String(object.address_key)
-        : "",
-      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
-    };
+    return { pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined };
   },
 
   toJSON(message: QueryMintersRequest): unknown {
     const obj: any = {};
-    if (message.addressKey !== "") {
-      obj.addressKey = message.addressKey;
-    }
-    if (message.limit !== 0) {
-      obj.limit = Math.round(message.limit);
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
     }
     return obj;
   },
@@ -1631,14 +1643,15 @@ export const QueryMintersRequest: MessageFns<QueryMintersRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<QueryMintersRequest>, I>>(object: I): QueryMintersRequest {
     const message = createBaseQueryMintersRequest();
-    message.addressKey = object.addressKey ?? "";
-    message.limit = object.limit ?? 0;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryMintersResponse(): QueryMintersResponse {
-  return { minters: [], nextAddress: "" };
+  return { minters: [], pagination: undefined };
 }
 
 export const QueryMintersResponse: MessageFns<QueryMintersResponse> = {
@@ -1646,8 +1659,8 @@ export const QueryMintersResponse: MessageFns<QueryMintersResponse> = {
     for (const v of message.minters) {
       writer.uint32(10).string(v!);
     }
-    if (message.nextAddress !== "") {
-      writer.uint32(18).string(message.nextAddress);
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -1672,7 +1685,7 @@ export const QueryMintersResponse: MessageFns<QueryMintersResponse> = {
             break;
           }
 
-          message.nextAddress = reader.string();
+          message.pagination = PageResponse.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1687,11 +1700,7 @@ export const QueryMintersResponse: MessageFns<QueryMintersResponse> = {
   fromJSON(object: any): QueryMintersResponse {
     return {
       minters: globalThis.Array.isArray(object?.minters) ? object.minters.map((e: any) => globalThis.String(e)) : [],
-      nextAddress: isSet(object.nextAddress)
-        ? globalThis.String(object.nextAddress)
-        : isSet(object.next_address)
-        ? globalThis.String(object.next_address)
-        : "",
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -1700,8 +1709,8 @@ export const QueryMintersResponse: MessageFns<QueryMintersResponse> = {
     if (message.minters?.length) {
       obj.minters = message.minters;
     }
-    if (message.nextAddress !== "") {
-      obj.nextAddress = message.nextAddress;
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
     }
     return obj;
   },
@@ -1712,22 +1721,21 @@ export const QueryMintersResponse: MessageFns<QueryMintersResponse> = {
   fromPartial<I extends Exact<DeepPartial<QueryMintersResponse>, I>>(object: I): QueryMintersResponse {
     const message = createBaseQueryMintersResponse();
     message.minters = object.minters?.map((e) => e) || [];
-    message.nextAddress = object.nextAddress ?? "";
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryKYCApproversRequest(): QueryKYCApproversRequest {
-  return { addressKey: "", limit: 0 };
+  return { pagination: undefined };
 }
 
 export const QueryKYCApproversRequest: MessageFns<QueryKYCApproversRequest> = {
   encode(message: QueryKYCApproversRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.addressKey !== "") {
-      writer.uint32(10).string(message.addressKey);
-    }
-    if (message.limit !== 0) {
-      writer.uint32(16).uint32(message.limit);
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -1744,15 +1752,7 @@ export const QueryKYCApproversRequest: MessageFns<QueryKYCApproversRequest> = {
             break;
           }
 
-          message.addressKey = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.limit = reader.uint32();
+          message.pagination = PageRequest.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1765,23 +1765,13 @@ export const QueryKYCApproversRequest: MessageFns<QueryKYCApproversRequest> = {
   },
 
   fromJSON(object: any): QueryKYCApproversRequest {
-    return {
-      addressKey: isSet(object.addressKey)
-        ? globalThis.String(object.addressKey)
-        : isSet(object.address_key)
-        ? globalThis.String(object.address_key)
-        : "",
-      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
-    };
+    return { pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined };
   },
 
   toJSON(message: QueryKYCApproversRequest): unknown {
     const obj: any = {};
-    if (message.addressKey !== "") {
-      obj.addressKey = message.addressKey;
-    }
-    if (message.limit !== 0) {
-      obj.limit = Math.round(message.limit);
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
     }
     return obj;
   },
@@ -1791,14 +1781,15 @@ export const QueryKYCApproversRequest: MessageFns<QueryKYCApproversRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<QueryKYCApproversRequest>, I>>(object: I): QueryKYCApproversRequest {
     const message = createBaseQueryKYCApproversRequest();
-    message.addressKey = object.addressKey ?? "";
-    message.limit = object.limit ?? 0;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryKYCApproversResponse(): QueryKYCApproversResponse {
-  return { approvers: [], nextAddress: "" };
+  return { approvers: [], pagination: undefined };
 }
 
 export const QueryKYCApproversResponse: MessageFns<QueryKYCApproversResponse> = {
@@ -1806,8 +1797,8 @@ export const QueryKYCApproversResponse: MessageFns<QueryKYCApproversResponse> = 
     for (const v of message.approvers) {
       writer.uint32(10).string(v!);
     }
-    if (message.nextAddress !== "") {
-      writer.uint32(18).string(message.nextAddress);
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -1832,7 +1823,7 @@ export const QueryKYCApproversResponse: MessageFns<QueryKYCApproversResponse> = 
             break;
           }
 
-          message.nextAddress = reader.string();
+          message.pagination = PageResponse.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1849,11 +1840,7 @@ export const QueryKYCApproversResponse: MessageFns<QueryKYCApproversResponse> = 
       approvers: globalThis.Array.isArray(object?.approvers)
         ? object.approvers.map((e: any) => globalThis.String(e))
         : [],
-      nextAddress: isSet(object.nextAddress)
-        ? globalThis.String(object.nextAddress)
-        : isSet(object.next_address)
-        ? globalThis.String(object.next_address)
-        : "",
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -1862,8 +1849,8 @@ export const QueryKYCApproversResponse: MessageFns<QueryKYCApproversResponse> = 
     if (message.approvers?.length) {
       obj.approvers = message.approvers;
     }
-    if (message.nextAddress !== "") {
-      obj.nextAddress = message.nextAddress;
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
     }
     return obj;
   },
@@ -1874,7 +1861,9 @@ export const QueryKYCApproversResponse: MessageFns<QueryKYCApproversResponse> = 
   fromPartial<I extends Exact<DeepPartial<QueryKYCApproversResponse>, I>>(object: I): QueryKYCApproversResponse {
     const message = createBaseQueryKYCApproversResponse();
     message.approvers = object.approvers?.map((e) => e) || [];
-    message.nextAddress = object.nextAddress ?? "";
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
@@ -1989,16 +1978,13 @@ export const QueryTransferUnlockTimeResponse: MessageFns<QueryTransferUnlockTime
 };
 
 function createBaseQueryApprovedMembersRequest(): QueryApprovedMembersRequest {
-  return { addressKey: "", limit: 0 };
+  return { pagination: undefined };
 }
 
 export const QueryApprovedMembersRequest: MessageFns<QueryApprovedMembersRequest> = {
   encode(message: QueryApprovedMembersRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.addressKey !== "") {
-      writer.uint32(10).string(message.addressKey);
-    }
-    if (message.limit !== 0) {
-      writer.uint32(16).uint32(message.limit);
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -2015,15 +2001,7 @@ export const QueryApprovedMembersRequest: MessageFns<QueryApprovedMembersRequest
             break;
           }
 
-          message.addressKey = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.limit = reader.uint32();
+          message.pagination = PageRequest.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -2036,23 +2014,13 @@ export const QueryApprovedMembersRequest: MessageFns<QueryApprovedMembersRequest
   },
 
   fromJSON(object: any): QueryApprovedMembersRequest {
-    return {
-      addressKey: isSet(object.addressKey)
-        ? globalThis.String(object.addressKey)
-        : isSet(object.address_key)
-        ? globalThis.String(object.address_key)
-        : "",
-      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
-    };
+    return { pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined };
   },
 
   toJSON(message: QueryApprovedMembersRequest): unknown {
     const obj: any = {};
-    if (message.addressKey !== "") {
-      obj.addressKey = message.addressKey;
-    }
-    if (message.limit !== 0) {
-      obj.limit = Math.round(message.limit);
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
     }
     return obj;
   },
@@ -2062,14 +2030,15 @@ export const QueryApprovedMembersRequest: MessageFns<QueryApprovedMembersRequest
   },
   fromPartial<I extends Exact<DeepPartial<QueryApprovedMembersRequest>, I>>(object: I): QueryApprovedMembersRequest {
     const message = createBaseQueryApprovedMembersRequest();
-    message.addressKey = object.addressKey ?? "";
-    message.limit = object.limit ?? 0;
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQueryApprovedMembersResponse(): QueryApprovedMembersResponse {
-  return { members: [], nextAddress: "" };
+  return { members: [], pagination: undefined };
 }
 
 export const QueryApprovedMembersResponse: MessageFns<QueryApprovedMembersResponse> = {
@@ -2077,8 +2046,8 @@ export const QueryApprovedMembersResponse: MessageFns<QueryApprovedMembersRespon
     for (const v of message.members) {
       writer.uint32(10).string(v!);
     }
-    if (message.nextAddress !== "") {
-      writer.uint32(18).string(message.nextAddress);
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -2103,7 +2072,7 @@ export const QueryApprovedMembersResponse: MessageFns<QueryApprovedMembersRespon
             break;
           }
 
-          message.nextAddress = reader.string();
+          message.pagination = PageResponse.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -2118,11 +2087,7 @@ export const QueryApprovedMembersResponse: MessageFns<QueryApprovedMembersRespon
   fromJSON(object: any): QueryApprovedMembersResponse {
     return {
       members: globalThis.Array.isArray(object?.members) ? object.members.map((e: any) => globalThis.String(e)) : [],
-      nextAddress: isSet(object.nextAddress)
-        ? globalThis.String(object.nextAddress)
-        : isSet(object.next_address)
-        ? globalThis.String(object.next_address)
-        : "",
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
     };
   },
 
@@ -2131,8 +2096,8 @@ export const QueryApprovedMembersResponse: MessageFns<QueryApprovedMembersRespon
     if (message.members?.length) {
       obj.members = message.members;
     }
-    if (message.nextAddress !== "") {
-      obj.nextAddress = message.nextAddress;
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
     }
     return obj;
   },
@@ -2143,7 +2108,9 @@ export const QueryApprovedMembersResponse: MessageFns<QueryApprovedMembersRespon
   fromPartial<I extends Exact<DeepPartial<QueryApprovedMembersResponse>, I>>(object: I): QueryApprovedMembersResponse {
     const message = createBaseQueryApprovedMembersResponse();
     message.members = object.members?.map((e) => e) || [];
-    message.nextAddress = object.nextAddress ?? "";
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
     return message;
   },
 };

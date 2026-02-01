@@ -25,10 +25,10 @@ async function main() {
   console.log('1. License Module Parameters');
   console.log('----------------------------');
   try {
-    const params = await client.rest.license.getParams();
-    console.log(`  Max supply: ${params.max_supply}`);
-    console.log(`  Transfer enabled: ${params.transfer_enabled}`);
-    console.log(`  Mint price: ${params.mint_price?.amount} ${params.mint_price?.denom}`);
+    const paramsResult = await client.rest.license.getParams();
+    console.log(`  Class name: ${paramsResult.params.class_name}`);
+    console.log(`  Supply cap: ${paramsResult.params.supply_cap}`);
+    console.log(`  Transfers enabled: ${paramsResult.params.enable_transfers}`);
   } catch (error) {
     console.log(`  Error: ${(error as Error).message}`);
   }
@@ -57,13 +57,15 @@ async function main() {
   console.log('\n4. Licenses Owned (first 5)');
   console.log('---------------------------');
   try {
-    const owned = await client.rest.license.getOwnedBy(OWNER_ADDRESS, { limit: 5 });
+    const owned = await client.rest.license.getOwnedBy(OWNER_ADDRESS, {
+      pagination: { "pagination.limit": 5 },
+    });
     if (owned.license_ids.length === 0) {
       console.log('  No licenses found');
     } else {
       console.log(`  License IDs: ${owned.license_ids.join(', ')}`);
-      if (owned.next_license_id_key) {
-        console.log(`  More available (next key: ${owned.next_license_id_key})`);
+      if (owned.pagination?.next_key) {
+        console.log(`  More available (next key: ${owned.pagination.next_key})`);
       }
     }
   } catch (error) {
@@ -74,13 +76,13 @@ async function main() {
   console.log('\n5. License Details');
   console.log('------------------');
   try {
-    const license = await client.rest.license.getLicense('1');
-    console.log(`  ID: ${license.id}`);
-    console.log(`  Owner: ${license.owner}`);
-    console.log(`  Status: ${license.status}`);
-    console.log(`  Class: ${license.class_name}`);
-    console.log(`  URI: ${license.uri}`);
-    console.log(`  Created: ${license.created_at}`);
+    const licenseResult = await client.rest.license.getLicense('1');
+    console.log(`  ID: ${licenseResult.license.id}`);
+    console.log(`  Owner: ${licenseResult.license.owner}`);
+    console.log(`  Status: ${licenseResult.license.status}`);
+    console.log(`  Class: ${licenseResult.license.class_name}`);
+    console.log(`  URI: ${licenseResult.license.uri}`);
+    console.log(`  Created: ${licenseResult.license.created_at}`);
   } catch (error) {
     console.log(`  Error: ${(error as Error).message}`);
   }
@@ -99,11 +101,13 @@ async function main() {
   console.log('\n7. Authorized Minters');
   console.log('---------------------');
   try {
-    const minters = await client.rest.license.getMinters({ limit: 5 });
-    if (minters.addresses.length === 0) {
+    const minters = await client.rest.license.getMinters({
+      pagination: { "pagination.limit": 5 },
+    });
+    if (minters.minters.length === 0) {
       console.log('  No minters registered');
     } else {
-      minters.addresses.forEach((addr, i) => {
+      minters.minters.forEach((addr, i) => {
         console.log(`  ${i + 1}. ${addr}`);
       });
     }
@@ -116,7 +120,7 @@ async function main() {
   console.log('--------------------------------------------------');
   try {
     const isApproved = await client.rest.license.isApprovedMember(OWNER_ADDRESS);
-    console.log(`  Is approved member: ${isApproved.is_approved_member}`);
+    console.log(`  Is approved member: ${isApproved.is_approved}`);
   } catch (error) {
     console.log(`  Error: ${(error as Error).message}`);
   }

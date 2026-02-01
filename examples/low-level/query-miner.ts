@@ -138,7 +138,9 @@ async function main() {
   console.log('\n9. Recent Epochs (last 5)');
   console.log('-------------------------');
   try {
-    const epochs = await client.rest.miner.getEpochs({ limit: 5, ascending: false });
+    const epochs = await client.rest.miner.getEpochs({
+      pagination: { "pagination.limit": 5, "pagination.reverse": true },
+    });
     epochs.epochs.forEach((ep) => {
       console.log(`  Epoch ${ep.epoch}: finalized=${ep.finalized}`);
     });

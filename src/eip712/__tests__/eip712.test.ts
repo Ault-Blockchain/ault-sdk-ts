@@ -98,7 +98,7 @@ describe("msg builders", () => {
       expect(result.value.licenseId).toBe(123n);
     });
 
-    it("setParams creates correct message with nested params", () => {
+    it("updateParams creates correct message with nested params", () => {
       const params = {
         className: "Ault License",
         classSymbol: "AULT",
@@ -108,7 +108,7 @@ describe("msg builders", () => {
         allowMetadataUpdate: true,
         adminCanRevoke: true,
         adminCanBurn: false,
-        maxBatchMintSize: 100,
+        maxBatchSize: 100,
         transferUnlockDays: 30,
         enableTransfers: true,
         minterAllowedMsgs: [],
@@ -117,9 +117,9 @@ describe("msg builders", () => {
         maxVotingPowerPerAddress: 100n,
       };
 
-      const result = msg.license.setParams({ authority: "ault1gov", params });
+      const result = msg.license.updateParams({ authority: "ault1gov", params });
 
-      expect(result.typeUrl).toBe("/ault.license.v1.MsgSetParams");
+      expect(result.typeUrl).toBe("/ault.license.v1.MsgUpdateParams");
       expect(result.value.params).toEqual(params);
     });
   });
@@ -143,7 +143,6 @@ describe("msg builders", () => {
         epoch: 100n,
         y: base64ToBytes("eQ=="),
         proof: base64ToBytes("cHJvb2Y="),
-        nonce: base64ToBytes("bm9uY2U="),
       });
 
       expect(result.typeUrl).toBe("/ault.miner.v1.MsgSubmitWork");
@@ -163,14 +162,12 @@ describe("msg builders", () => {
             epoch: 100n,
             y: base64ToBytes("eQ=="),
             proof: base64ToBytes("cA=="),
-            nonce: base64ToBytes("bg=="),
           },
           {
             licenseId: 2n,
             epoch: 100n,
             y: base64ToBytes("eQ=="),
             proof: base64ToBytes("cA=="),
-            nonce: base64ToBytes("bg=="),
           },
         ],
       });
@@ -326,7 +323,6 @@ describe("buildEip712TypedData", () => {
           epoch: 100n,
           y: base64ToBytes("eQ=="),
           proof: base64ToBytes("cA=="),
-          nonce: base64ToBytes("bg=="),
         },
       ],
     });
@@ -560,7 +556,7 @@ describe("bigint field validation", () => {
 
   describe("Bytes fields (msg-encoders requireBytes)", () => {
     // Tests the requireBytes function in msg-encoders.generated.ts
-    // Using MsgSubmitWork which has bytes fields: y, proof, nonce
+    // Using MsgSubmitWork which has bytes fields: y, proof
 
     const encode = MSG_ENCODERS["/ault.miner.v1.MsgSubmitWork"];
 
@@ -571,7 +567,6 @@ describe("bigint field validation", () => {
         epoch: 1n,
         y: new Uint8Array([1, 2, 3]),
         proof: new Uint8Array([4, 5, 6]),
-        nonce: new Uint8Array([7, 8, 9]),
       });
       expect(result).toBeInstanceOf(Uint8Array);
     });
@@ -583,7 +578,6 @@ describe("bigint field validation", () => {
         epoch: 1n,
         y: "AQID", // [1, 2, 3]
         proof: "BAUG", // [4, 5, 6]
-        nonce: "BwgJ", // [7, 8, 9]
       });
       expect(result).toBeInstanceOf(Uint8Array);
     });
@@ -595,7 +589,6 @@ describe("bigint field validation", () => {
         epoch: 1n,
         y: "",
         proof: "BAUG",
-        nonce: "BwgJ",
       });
       expect(result).toBeInstanceOf(Uint8Array);
     });
@@ -608,7 +601,6 @@ describe("bigint field validation", () => {
           epoch: 1n,
           y: "not!valid!base64",
           proof: "BAUG",
-          nonce: "BwgJ",
         })
       ).toThrow(/must be a Uint8Array or valid base64 string/);
     });
@@ -621,7 +613,6 @@ describe("bigint field validation", () => {
           epoch: 1n,
           y: 12345,
           proof: "BAUG",
-          nonce: "BwgJ",
         })
       ).toThrow(/must be a Uint8Array or base64 string/);
     });

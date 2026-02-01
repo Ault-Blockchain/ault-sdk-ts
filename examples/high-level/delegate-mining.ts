@@ -45,13 +45,14 @@ async function main() {
   console.log("1. Checking owned licenses...");
   console.log("-----------------------------");
   try {
-    const owned = await client.license.getOwnedBy(client.address, { limit: 10 });
+    const owned = await client.license.getOwnedBy(client.address, {
+      pagination: { "pagination.limit": 10 },
+    });
     if (owned.license_ids.length === 0) {
       console.log("  No licenses owned. Cannot delegate.");
       return;
     }
     console.log(`  Owned license IDs: ${owned.license_ids.join(", ")}`);
-    console.log(`  Total owned: ${owned.total}`);
   } catch (error) {
     console.log(`  Error: ${(error as Error).message}`);
   }

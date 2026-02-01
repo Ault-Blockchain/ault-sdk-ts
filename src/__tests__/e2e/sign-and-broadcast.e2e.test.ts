@@ -135,19 +135,18 @@ async function pickRandomOperator(client: AultClient, owner: string): Promise<st
 }
 
 async function isMinter(client: AultClient, address: string): Promise<boolean> {
-  let nextAddress: string | undefined;
+  let nextKey: string | undefined;
   for (let attempt = 0; attempt < 20; attempt++) {
     const page = await client.rest.license.getMinters({
-      address_key: nextAddress,
-      limit: 200,
+      pagination: { "pagination.limit": 200, "pagination.key": nextKey },
     });
     if (page.minters.includes(address)) {
       return true;
     }
-    if (!page.next_address) {
+    if (!page.pagination?.next_key) {
       return false;
     }
-    nextAddress = page.next_address;
+    nextKey = page.pagination.next_key;
   }
   return false;
 }
@@ -296,7 +295,9 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
      */
     it("should broadcast MsgDelegateMining", async () => {
       // First check if user has any licenses
-      const ownedLicenses = await client.rest.license.getOwnedBy(aultAddress, { limit: 1 });
+      const ownedLicenses = await client.rest.license.getOwnedBy(aultAddress, {
+        pagination: { "pagination.limit": 1 },
+      });
 
       if (ownedLicenses.license_ids.length === 0) {
         console.log("No licenses owned - skipping delegation broadcast test");
@@ -360,7 +361,9 @@ describe.skipIf(!shouldRun)("E2E: Sign and Broadcast", () => {
      * This test cancels any existing delegation for cleanup purposes.
      */
     it("should broadcast MsgCancelMiningDelegation (cleanup)", async () => {
-      const ownedLicenses = await client.rest.license.getOwnedBy(aultAddress, { limit: 1 });
+      const ownedLicenses = await client.rest.license.getOwnedBy(aultAddress, {
+        pagination: { "pagination.limit": 1 },
+      });
 
       if (ownedLicenses.license_ids.length === 0) {
         console.log("No licenses owned - skipping cancel delegation test");

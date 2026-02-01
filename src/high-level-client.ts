@@ -247,7 +247,6 @@ export interface Client {
       epoch: bigint | number | string;
       y: Uint8Array;
       proof: Uint8Array;
-      nonce: Uint8Array;
     } & TxOptions
   ): Promise<TxResult>;
 
@@ -261,7 +260,6 @@ export interface Client {
         epoch: bigint | number | string;
         y: Uint8Array;
         proof: Uint8Array;
-        nonce: Uint8Array;
       }>;
     } & TxOptions
   ): Promise<TxResult>;
@@ -808,7 +806,7 @@ export async function createClient(options: ClientOptions): Promise<Client> {
       );
     },
 
-    async submitWork({ licenseId, epoch, y, proof, nonce, gasLimit, memo }) {
+    async submitWork({ licenseId, epoch, y, proof, gasLimit, memo }) {
       return exec(
         [
           msg.miner.submitWork({
@@ -817,7 +815,6 @@ export async function createClient(options: ClientOptions): Promise<Client> {
             epoch: toBigInt(epoch),
             y,
             proof,
-            nonce,
           }),
         ],
         { gasLimit, memo }
@@ -830,7 +827,6 @@ export async function createClient(options: ClientOptions): Promise<Client> {
         epoch: toBigInt(s.epoch),
         y: s.y,
         proof: s.proof,
-        nonce: s.nonce,
       }));
 
       return exec(

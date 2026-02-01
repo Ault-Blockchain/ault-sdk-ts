@@ -15,7 +15,7 @@
  * Run with: PRIVATE_KEY=your_private_key npx tsx examples/high-level-exchange-orders.ts
  */
 
-import { createClient, getNetworkConfig, base64ToBytes } from "../src";
+import { createClient, getNetworkConfig } from "../src";
 import { privateKeyToAccount } from "viem/accounts";
 
 const MARKET_ID = 1;

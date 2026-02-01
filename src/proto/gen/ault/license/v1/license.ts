@@ -113,10 +113,10 @@ export interface Params {
   /** admin_can_burn indicates whether admins can burn licenses */
   adminCanBurn: boolean;
   /**
-   * max_batch_mint_size is the maximum number of licenses that can be minted in
-   * a single batch (default 100)
+   * max_batch_size is the maximum number of items in a single batch operation
+   * (license minting, member approval/revocation, etc.) Default is 1000.
    */
-  maxBatchMintSize: number;
+  maxBatchSize: number;
   /**
    * transfer_unlock_days is the number of days from genesis time
    * when all licenses become transferable globally
@@ -147,20 +147,6 @@ export interface Params {
    * governance. 0 means no cap. Used to prevent concentration of voting power.
    */
   maxVotingPowerPerAddress: bigint;
-}
-
-/** BurnInfo stores information about a burned license (for tombstoning) */
-export interface BurnInfo {
-  /** id is the license ID that was burned */
-  id: bigint;
-  /** former_owner is the address that owned the license before burning */
-  formerOwner: string;
-  /** burned_timestamp is the timestamp when the license was burned */
-  burnedTimestamp:
-    | Date
-    | undefined;
-  /** reason is the reason for burning */
-  reason: string;
 }
 
 /** TransferRecord records a license transfer for snapshot-based governance */
@@ -402,7 +388,7 @@ function createBaseParams(): Params {
     allowMetadataUpdate: false,
     adminCanRevoke: false,
     adminCanBurn: false,
-    maxBatchMintSize: 0,
+    maxBatchSize: 0,
     transferUnlockDays: 0,
     enableTransfers: false,
     minterAllowedMsgs: [],
@@ -441,8 +427,8 @@ export const Params: MessageFns<Params> = {
     if (message.adminCanBurn !== false) {
       writer.uint32(64).bool(message.adminCanBurn);
     }
-    if (message.maxBatchMintSize !== 0) {
-      writer.uint32(72).uint32(message.maxBatchMintSize);
+    if (message.maxBatchSize !== 0) {
+      writer.uint32(72).uint32(message.maxBatchSize);
     }
     if (message.transferUnlockDays !== 0) {
       writer.uint32(80).uint32(message.transferUnlockDays);
@@ -549,7 +535,7 @@ export const Params: MessageFns<Params> = {
             break;
           }
 
-          message.maxBatchMintSize = reader.uint32();
+          message.maxBatchSize = reader.uint32();
           continue;
         }
         case 10: {
@@ -651,10 +637,10 @@ export const Params: MessageFns<Params> = {
         : isSet(object.admin_can_burn)
         ? globalThis.Boolean(object.admin_can_burn)
         : false,
-      maxBatchMintSize: isSet(object.maxBatchMintSize)
-        ? globalThis.Number(object.maxBatchMintSize)
-        : isSet(object.max_batch_mint_size)
-        ? globalThis.Number(object.max_batch_mint_size)
+      maxBatchSize: isSet(object.maxBatchSize)
+        ? globalThis.Number(object.maxBatchSize)
+        : isSet(object.max_batch_size)
+        ? globalThis.Number(object.max_batch_size)
         : 0,
       transferUnlockDays: isSet(object.transferUnlockDays)
         ? globalThis.Number(object.transferUnlockDays)
@@ -715,8 +701,8 @@ export const Params: MessageFns<Params> = {
     if (message.adminCanBurn !== false) {
       obj.adminCanBurn = message.adminCanBurn;
     }
-    if (message.maxBatchMintSize !== 0) {
-      obj.maxBatchMintSize = Math.round(message.maxBatchMintSize);
+    if (message.maxBatchSize !== 0) {
+      obj.maxBatchSize = Math.round(message.maxBatchSize);
     }
     if (message.transferUnlockDays !== 0) {
       obj.transferUnlockDays = Math.round(message.transferUnlockDays);
@@ -752,132 +738,13 @@ export const Params: MessageFns<Params> = {
     message.allowMetadataUpdate = object.allowMetadataUpdate ?? false;
     message.adminCanRevoke = object.adminCanRevoke ?? false;
     message.adminCanBurn = object.adminCanBurn ?? false;
-    message.maxBatchMintSize = object.maxBatchMintSize ?? 0;
+    message.maxBatchSize = object.maxBatchSize ?? 0;
     message.transferUnlockDays = object.transferUnlockDays ?? 0;
     message.enableTransfers = object.enableTransfers ?? false;
     message.minterAllowedMsgs = object.minterAllowedMsgs?.map((e) => e) || [];
     message.kycApproverAllowedMsgs = object.kycApproverAllowedMsgs?.map((e) => e) || [];
     message.freeMaxGasLimit = object.freeMaxGasLimit ?? 0n;
     message.maxVotingPowerPerAddress = object.maxVotingPowerPerAddress ?? 0n;
-    return message;
-  },
-};
-
-function createBaseBurnInfo(): BurnInfo {
-  return { id: 0n, formerOwner: "", burnedTimestamp: undefined, reason: "" };
-}
-
-export const BurnInfo: MessageFns<BurnInfo> = {
-  encode(message: BurnInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== 0n) {
-      if (BigInt.asUintN(64, message.id) !== message.id) {
-        throw new globalThis.Error("value provided for field message.id of type uint64 too large");
-      }
-      writer.uint32(8).uint64(message.id);
-    }
-    if (message.formerOwner !== "") {
-      writer.uint32(18).string(message.formerOwner);
-    }
-    if (message.burnedTimestamp !== undefined) {
-      Timestamp.encode(toTimestamp(message.burnedTimestamp), writer.uint32(26).fork()).join();
-    }
-    if (message.reason !== "") {
-      writer.uint32(34).string(message.reason);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): BurnInfo {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBurnInfo();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.id = reader.uint64() as bigint;
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.formerOwner = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.burnedTimestamp = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.reason = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): BurnInfo {
-    return {
-      id: isSet(object.id) ? BigInt(object.id) : 0n,
-      formerOwner: isSet(object.formerOwner)
-        ? globalThis.String(object.formerOwner)
-        : isSet(object.former_owner)
-        ? globalThis.String(object.former_owner)
-        : "",
-      burnedTimestamp: isSet(object.burnedTimestamp)
-        ? fromJsonTimestamp(object.burnedTimestamp)
-        : isSet(object.burned_timestamp)
-        ? fromJsonTimestamp(object.burned_timestamp)
-        : undefined,
-      reason: isSet(object.reason) ? globalThis.String(object.reason) : "",
-    };
-  },
-
-  toJSON(message: BurnInfo): unknown {
-    const obj: any = {};
-    if (message.id !== 0n) {
-      obj.id = message.id.toString();
-    }
-    if (message.formerOwner !== "") {
-      obj.formerOwner = message.formerOwner;
-    }
-    if (message.burnedTimestamp !== undefined) {
-      obj.burnedTimestamp = message.burnedTimestamp.toISOString();
-    }
-    if (message.reason !== "") {
-      obj.reason = message.reason;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<BurnInfo>, I>>(base?: I): BurnInfo {
-    return BurnInfo.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<BurnInfo>, I>>(object: I): BurnInfo {
-    const message = createBaseBurnInfo();
-    message.id = object.id ?? 0n;
-    message.formerOwner = object.formerOwner ?? "";
-    message.burnedTimestamp = object.burnedTimestamp ?? undefined;
-    message.reason = object.reason ?? "";
     return message;
   },
 };

@@ -66,8 +66,25 @@ export interface EpochInfo {
 export interface LicenseInfo {
   /** credits earned */
   credits: bigint;
-  /** payout amount (in sdk.Int format) */
+  /** payout is the total payout amount for this license in this epoch */
   payout: string;
+  /** owner is the license owner at the time credits were earned */
+  owner: string;
+  /**
+   * commission_recipient is the address to receive commission
+   * Empty if not delegated
+   */
+  commissionRecipient: string;
+  /**
+   * commission_rate is the operator's commission rate at the time credits were
+   * earned (0-100)
+   */
+  commissionRate: number;
+  /**
+   * operator is the operator address at the time credits were earned
+   * Empty if not delegated
+   */
+  operator: string;
 }
 
 /** RewardQueueItem represents a reward to be paid out */
@@ -163,7 +180,7 @@ export interface Params {
   /**
    * staking_reward_percentage is the percentage of emissions to send to the
    * staking reward pool via distribution module (0-100)
-   * Default: 5 (all emissions go to miners)
+   * Default: 5 (5% to stakers, 95% to miners)
    * Example: 20 means 20% to stakers, 80% to miners
    */
   stakingRewardPercentage: number;
@@ -651,7 +668,7 @@ export const EpochInfo: MessageFns<EpochInfo> = {
 };
 
 function createBaseLicenseInfo(): LicenseInfo {
-  return { credits: 0n, payout: "" };
+  return { credits: 0n, payout: "", owner: "", commissionRecipient: "", commissionRate: 0, operator: "" };
 }
 
 export const LicenseInfo: MessageFns<LicenseInfo> = {
@@ -664,6 +681,18 @@ export const LicenseInfo: MessageFns<LicenseInfo> = {
     }
     if (message.payout !== "") {
       writer.uint32(18).string(message.payout);
+    }
+    if (message.owner !== "") {
+      writer.uint32(26).string(message.owner);
+    }
+    if (message.commissionRecipient !== "") {
+      writer.uint32(34).string(message.commissionRecipient);
+    }
+    if (message.commissionRate !== 0) {
+      writer.uint32(40).uint32(message.commissionRate);
+    }
+    if (message.operator !== "") {
+      writer.uint32(50).string(message.operator);
     }
     return writer;
   },
@@ -691,6 +720,38 @@ export const LicenseInfo: MessageFns<LicenseInfo> = {
           message.payout = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.owner = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.commissionRecipient = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.commissionRate = reader.uint32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.operator = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -704,6 +765,18 @@ export const LicenseInfo: MessageFns<LicenseInfo> = {
     return {
       credits: isSet(object.credits) ? BigInt(object.credits) : 0n,
       payout: isSet(object.payout) ? globalThis.String(object.payout) : "",
+      owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
+      commissionRecipient: isSet(object.commissionRecipient)
+        ? globalThis.String(object.commissionRecipient)
+        : isSet(object.commission_recipient)
+        ? globalThis.String(object.commission_recipient)
+        : "",
+      commissionRate: isSet(object.commissionRate)
+        ? globalThis.Number(object.commissionRate)
+        : isSet(object.commission_rate)
+        ? globalThis.Number(object.commission_rate)
+        : 0,
+      operator: isSet(object.operator) ? globalThis.String(object.operator) : "",
     };
   },
 
@@ -715,6 +788,18 @@ export const LicenseInfo: MessageFns<LicenseInfo> = {
     if (message.payout !== "") {
       obj.payout = message.payout;
     }
+    if (message.owner !== "") {
+      obj.owner = message.owner;
+    }
+    if (message.commissionRecipient !== "") {
+      obj.commissionRecipient = message.commissionRecipient;
+    }
+    if (message.commissionRate !== 0) {
+      obj.commissionRate = Math.round(message.commissionRate);
+    }
+    if (message.operator !== "") {
+      obj.operator = message.operator;
+    }
     return obj;
   },
 
@@ -725,6 +810,10 @@ export const LicenseInfo: MessageFns<LicenseInfo> = {
     const message = createBaseLicenseInfo();
     message.credits = object.credits ?? 0n;
     message.payout = object.payout ?? "";
+    message.owner = object.owner ?? "";
+    message.commissionRecipient = object.commissionRecipient ?? "";
+    message.commissionRate = object.commissionRate ?? 0;
+    message.operator = object.operator ?? "";
     return message;
   },
 };

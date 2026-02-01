@@ -244,7 +244,7 @@ describe("MinerApi", () => {
   describe("getEpochs", () => {
     it("fetches epochs list without params", async () => {
       mockFetch = createMockFetch(
-        mockJsonResponse({ epochs: [sampleEpoch], next_epoch_key: "0" }),
+        mockJsonResponse({ epochs: [sampleEpoch] }),
       );
       context.fetchFn = mockFetch;
       api = createMinerApi(context);
@@ -253,7 +253,6 @@ describe("MinerApi", () => {
 
       expect(result.epochs).toHaveLength(1);
       expect(result.epochs[0]).toEqual(sampleEpoch);
-      expect(result.next_epoch_key).toBe("0");
       expect(mockFetch.mock.calls[0][0]).toBe("https://api.example.com/ault/miner/v1/epochs");
     });
 
@@ -262,12 +261,13 @@ describe("MinerApi", () => {
       context.fetchFn = mockFetch;
       api = createMinerApi(context);
 
-      await api.getEpochs({ epoch_key: "50", limit: 10, ascending: true });
+      await api.getEpochs({
+        pagination: { "pagination.limit": 10, "pagination.reverse": true },
+      });
 
       const url = mockFetch.mock.calls[0][0];
-      expect(url).toContain("epoch_key=50");
-      expect(url).toContain("limit=10");
-      expect(url).toContain("ascending=true");
+      expect(url).toContain("pagination.limit=10");
+      expect(url).toContain("pagination.reverse=true");
     });
   });
 
@@ -278,8 +278,8 @@ describe("MinerApi", () => {
       const epoch3 = { ...sampleEpoch, epoch: "3" };
 
       mockFetch = createMockFetch([
-        mockJsonResponse({ epochs: [epoch1, epoch2], next_epoch_key: "3" }),
-        mockJsonResponse({ epochs: [epoch3], next_epoch_key: "0" }),
+        mockJsonResponse({ epochs: [epoch1, epoch2], pagination: { next_key: "abc" } }),
+        mockJsonResponse({ epochs: [epoch3], pagination: { next_key: "" } }),
       ]);
       context.fetchFn = mockFetch;
       api = createMinerApi(context);
@@ -293,7 +293,7 @@ describe("MinerApi", () => {
     });
 
     it("handles empty result", async () => {
-      mockFetch = createMockFetch(mockJsonResponse({ epochs: [], next_epoch_key: "0" }));
+      mockFetch = createMockFetch(mockJsonResponse({ epochs: [], pagination: { next_key: "" } }));
       context.fetchFn = mockFetch;
       api = createMinerApi(context);
 
@@ -305,7 +305,7 @@ describe("MinerApi", () => {
 
     it("handles single page result", async () => {
       mockFetch = createMockFetch(
-        mockJsonResponse({ epochs: [sampleEpoch], next_epoch_key: "0" }),
+        mockJsonResponse({ epochs: [sampleEpoch], pagination: { next_key: "" } }),
       );
       context.fetchFn = mockFetch;
       api = createMinerApi(context);

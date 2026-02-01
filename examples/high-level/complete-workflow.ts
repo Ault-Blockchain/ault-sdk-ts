@@ -296,7 +296,7 @@ await client.delegateMining({ licenseIds, operator });
 await client.cancelMiningDelegation({ licenseIds });
 await client.redelegateMining({ licenseIds, newOperator });
 await client.setOwnerVrfKey({ vrfPubkey, possessionProof, nonce });
-await client.submitWork({ licenseId, epoch, y, proof, nonce });
+await client.submitWork({ licenseId, epoch, y, proof });
 await client.batchSubmitWork({ submissions });
 await client.registerOperator({ commissionRate, commissionRecipient? });
 await client.unregisterOperator();
