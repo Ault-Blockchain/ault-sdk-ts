@@ -29,7 +29,8 @@
     "lint:fix": "oxlint --fix .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.10.2",
