@@ -1,7 +1,27 @@
 {
   "name": "ault-sdk-ts",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.0.1",
+  "description": "TypeScript SDK for the Ault blockchain with high-level transaction methods and REST query clients",
+  "license": "MIT",
+  "author": "AULT core contributors",
+  "homepage": "https://github.com/Ault-Blockchain/ault-sdk-ts#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ault-Blockchain/ault-sdk-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Ault-Blockchain/ault-sdk-ts/issues"
+  },
+  "keywords": [
+    "ault",
+    "blockchain",
+    "sdk",
+    "typescript",
+    "eip712",
+    "cosmos",
+    "web3",
+    "crypto"
+  ],
   "files": [
     "dist"
   ],

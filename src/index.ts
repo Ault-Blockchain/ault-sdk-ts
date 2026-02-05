@@ -1,4 +1,5 @@
-export const SDK_VERSION = "0.1.0";
+declare const __SDK_VERSION__: string;
+export const SDK_VERSION = __SDK_VERSION__;
 
 export * from "./client";
 export * from "./high-level-client";
