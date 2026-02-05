@@ -7,7 +7,7 @@
  * SETUP:
  *   Set the PRIVATE_KEY environment variable (hex string, with or without 0x)
  *
- * Run with: PRIVATE_KEY=your_private_key npx tsx examples/place-exchange-order.ts
+ * Run with: PRIVATE_KEY=your_private_key npx tsx examples/low-level/place-exchange-order.ts
  */
 
 import {
@@ -17,7 +17,7 @@ import {
   createPrivateKeySigner,
   evmToAult,
   msg,
-} from '../src';
+} from '../../src';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const MARKET_ID = 1n;
@@ -218,8 +218,8 @@ function showDemoUsage() {
      msgs: [...],
    });
 
-NOTE: MsgCancelOrder (single order cancel) is NOT yet EIP-712 compatible.
-      Use MsgCancelAllOrders to cancel all orders in a market.
+NOTE: MsgCancelOrder (single order cancel) is EIP-712 compatible.
+      Use MsgCancelAllOrders to cancel all orders in a market, or cancelOrder when you have an order ID.
 `);
 }
 

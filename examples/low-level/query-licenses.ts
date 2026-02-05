@@ -4,10 +4,10 @@
  * This example demonstrates how to use the License REST API to query
  * license information from the Ault blockchain.
  *
- * Run with: npx tsx examples/query-licenses.ts
+ * Run with: npx tsx examples/low-level/query-licenses.ts
  */
 
-import { createAultClient, getNetworkConfig } from '../src';
+import { createAultClient, getNetworkConfig } from '../../src';
 
 // Replace with an actual address to test
 const OWNER_ADDRESS = 'ault1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqnrql8a';

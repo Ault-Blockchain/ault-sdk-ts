@@ -4,10 +4,10 @@
  * This example demonstrates how to use the Exchange REST API to query
  * market and order data from the Ault blockchain DEX.
  *
- * Run with: npx tsx examples/query-exchange.ts
+ * Run with: npx tsx examples/low-level/query-exchange.ts
  */
 
-import { createAultClient, getNetworkConfig } from '../src';
+import { createAultClient, getNetworkConfig } from '../../src';
 
 // Replace with actual values to test
 const TRADER_ADDRESS = 'ault1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqnrql8a';

@@ -4,10 +4,10 @@
  * This example demonstrates all the different ways to create a high-level
  * client with various wallet/signer types.
  *
- * Run with: npx tsx examples/high-level-signers.ts
+ * Run with: npx tsx examples/high-level/signers.ts
  */
 
-import { createClient, getNetworkConfig, evmToAult } from "../src";
+import { createClient, getNetworkConfig, evmToAult } from "../../src";
 
 // For viem examples
 import { privateKeyToAccount } from "viem/accounts";

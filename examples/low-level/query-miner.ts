@@ -4,10 +4,10 @@
  * This example demonstrates how to use the Miner REST API to query
  * mining data from the Ault blockchain.
  *
- * Run with: npx tsx examples/query-miner.ts
+ * Run with: npx tsx examples/low-level/query-miner.ts
  */
 
-import { createAultClient, getNetworkConfig } from '../src';
+import { createAultClient, getNetworkConfig } from '../../src';
 
 // Replace with actual values to test
 const OWNER_ADDRESS = 'ault1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqnrql8a';

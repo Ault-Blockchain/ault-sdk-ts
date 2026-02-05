@@ -7,7 +7,7 @@
  * SETUP:
  *   Set the PRIVATE_KEY environment variable (hex string, with or without 0x)
  *
- * Run with: PRIVATE_KEY=your_private_key npx tsx examples/delegate-mining.ts
+ * Run with: PRIVATE_KEY=your_private_key npx tsx examples/low-level/delegate-mining.ts
  */
 
 import {
@@ -17,7 +17,7 @@ import {
   createPrivateKeySigner,
   evmToAult,
   msg,
-} from "../src";
+} from "../../src";
 import { privateKeyToAccount } from "viem/accounts";
 
 // Replace with actual operator address for real delegation

@@ -10,10 +10,10 @@
  * SETUP:
  *   Set the PRIVATE_KEY environment variable (hex string, with or without 0x)
  *
- * Run with: PRIVATE_KEY=your_private_key npx tsx examples/high-level-complete-workflow.ts
+ * Run with: PRIVATE_KEY=your_private_key npx tsx examples/high-level/complete-workflow.ts
  */
 
-import { createClient, getNetworkConfig } from "../src";
+import { createClient, getNetworkConfig } from "../../src";
 import { privateKeyToAccount } from "viem/accounts";
 
 async function main() {
@@ -175,7 +175,7 @@ async function main() {
   console.log("--------------------------");
   try {
     const result = await client.registerOperator({
-      commissionRate: 500, // 5% (in basis points)
+      commissionRate: 5, // Percentage (0-100)
       // commissionRecipient defaults to signer address if not specified
     });
     console.log(`  ${result.success ? "SUCCESS" : "FAILED"}: ${result.txHash}`);

@@ -8,10 +8,10 @@
  * SETUP:
  *   Set the PRIVATE_KEY environment variable (hex string, with or without 0x)
  *
- * Run with: PRIVATE_KEY=your_private_key npx tsx examples/high-level-delegate-mining.ts
+ * Run with: PRIVATE_KEY=your_private_key npx tsx examples/high-level/delegate-mining.ts
  */
 
-import { createClient, getNetworkConfig } from "../src";
+import { createClient, getNetworkConfig } from "../../src";
 import { privateKeyToAccount } from "viem/accounts";
 
 // Replace with actual operator address for real delegation

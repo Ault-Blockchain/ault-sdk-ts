@@ -17,13 +17,13 @@ A TypeScript SDK for the Ault blockchain that provides high-level transaction me
 
 ```bash
 # npm
-npm install ault-sdk-ts
+npm install git+https://github.com/Ault-Blockchain/ault-sdk-ts.git
 
 # pnpm
-pnpm add ault-sdk-ts
+pnpm add git+https://github.com/Ault-Blockchain/ault-sdk-ts.git
 
 # bun
-bun add ault-sdk-ts
+bun add git+https://github.com/Ault-Blockchain/ault-sdk-ts.git
 ```
 
 ## Quick Start
@@ -270,25 +270,24 @@ await client.submitWork({
   epoch: 456,
   y: base64ToBytes('base64...'),
   proof: base64ToBytes('base64...'),
-  nonce: base64ToBytes('base64...'),
 });
 
 // Batch submit work
 await client.batchSubmitWork({
   submissions: [
-    { licenseId: 1, epoch: 100, y: base64ToBytes('...'), proof: base64ToBytes('...'), nonce: base64ToBytes('...') },
-    { licenseId: 2, epoch: 100, y: base64ToBytes('...'), proof: base64ToBytes('...'), nonce: base64ToBytes('...') },
+    { licenseId: 1, epoch: 100, y: base64ToBytes('...'), proof: base64ToBytes('...') },
+    { licenseId: 2, epoch: 100, y: base64ToBytes('...'), proof: base64ToBytes('...') },
   ],
 });
 
 // Operator management
 await client.registerOperator({
-  commissionRate: 500,            // 5% (in basis points)
+  commissionRate: 5,              // Percentage (0-100)
   commissionRecipient: '0x...',   // Optional, defaults to signer
 });
 await client.unregisterOperator();
 await client.updateOperatorInfo({
-  newCommissionRate: 600,
+  newCommissionRate: 6,
   newCommissionRecipient: '0x...',
 });
 ```
@@ -391,6 +390,9 @@ const typedData = lowLevel.eip712.buildTypedData(context, msgs);
 
 // Use the msg namespace directly
 import { msg } from 'ault-sdk-ts';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const mySigner = privateKeyToAccount('0x...');
 
 const delegateMsg = msg.miner.delegateMining({
   owner: 'ault1...',
@@ -400,6 +402,7 @@ const delegateMsg = msg.miner.delegateMining({
 
 // Sign and broadcast manually
 const result = await lowLevel.eip712.signAndBroadcast({
+  signer: mySigner,       // provide the signer explicitly
   signerAddress: 'ault1...',
   msgs: [delegateMsg],
 });
