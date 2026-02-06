@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createStakingApi, type StakingApi } from "../staking";
-import { createMockFetch, mockJsonResponse, type MockFetch } from "../../__tests__/helpers/mock-fetch";
+import { createMockFetch, mockJsonResponse, type MockFetch } from "./mock-fetch";
 import type {
   Validator,
   DelegationResponse,

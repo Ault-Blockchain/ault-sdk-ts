@@ -4,11 +4,12 @@
  * This test signs and broadcasts real transactions to testnet/devnet.
  *
  * SETUP:
+ *   0. Set AULT_TEST_E2E_LIVE=1
  *   1. Set the AULT_TEST_PRIVATE_KEY environment variable (hex string, with or without 0x)
  *   2. Optionally set AULT_TEST_NETWORK to 'testnet' or 'localnet' (default: testnet)
  *
  * RUN:
- *   AULT_TEST_PRIVATE_KEY=your_private_key pnpm test:e2e
+ *   AULT_TEST_E2E_LIVE=1 AULT_TEST_PRIVATE_KEY=your_private_key pnpm test:e2e
  *
  * IMPORTANT:
  *   - The test account needs some AULT tokens for gas fees
@@ -34,10 +35,10 @@ import {
   normalizeSignature,
   type NetworkConfig,
   type AultClient,
-} from "../../index";
+} from "../../src/index";
 
 function loadEnvLocal(): void {
-  const envUrl = new URL("../../../.env.local", import.meta.url);
+  const envUrl = new URL("../../.env.local", import.meta.url);
   if (!existsSync(envUrl)) {
     return;
   }
@@ -65,8 +66,10 @@ loadEnvLocal();
 // Skip all tests if no private key is provided
 const PRIVATE_KEY = process.env.AULT_TEST_PRIVATE_KEY;
 const NETWORK_TYPE = (process.env.AULT_TEST_NETWORK || "testnet") as "testnet" | "localnet";
+const RUN_LIVE_E2E =
+  process.env.AULT_TEST_E2E_LIVE === "1" || process.env.AULT_TEST_E2E_LIVE === "true";
 
-const shouldRun = !!PRIVATE_KEY;
+const shouldRun = RUN_LIVE_E2E && !!PRIVATE_KEY;
 const shouldBroadcast =
   shouldRun && (process.env.AULT_TEST_BROADCAST === "1" || process.env.AULT_TEST_BROADCAST === "true");
 
@@ -552,6 +555,7 @@ describe("E2E Configuration Check", () => {
   it("should show test configuration status", () => {
     console.log("\n========================================");
     console.log("E2E Test Environment:");
+    console.log(`  AULT_TEST_E2E_LIVE: ${RUN_LIVE_E2E ? "ENABLED" : "DISABLED"}`);
     console.log(`  AULT_TEST_PRIVATE_KEY: ${PRIVATE_KEY ? "SET (hidden)" : "NOT SET"}`);
     console.log(`  AULT_TEST_NETWORK: ${NETWORK_TYPE}`);
     console.log(`  AULT_TEST_BROADCAST: ${shouldBroadcast ? "ENABLED" : "DISABLED"}`);
@@ -559,8 +563,8 @@ describe("E2E Configuration Check", () => {
     console.log("========================================\n");
 
     if (!shouldRun) {
-      console.log("To run E2E tests, set AULT_TEST_PRIVATE_KEY environment variable:");
-      console.log("  AULT_TEST_PRIVATE_KEY=your_hex_private_key pnpm test:e2e");
+      console.log("To run E2E tests:");
+      console.log("  AULT_TEST_E2E_LIVE=1 AULT_TEST_PRIVATE_KEY=your_hex_private_key pnpm test:e2e");
     } else if (!shouldBroadcast) {
       console.log("Broadcast tests are disabled to avoid hammering testnet.");
       console.log("Enable with: AULT_TEST_BROADCAST=1 pnpm test:e2e");

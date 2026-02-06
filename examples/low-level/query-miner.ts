@@ -67,7 +67,7 @@ async function main() {
   try {
     const schedule = await client.rest.miner.getEmissionSchedule();
     schedule.schedule.slice(0, 5).forEach((entry, i) => {
-      console.log(`  Year ${i + 1}: ${entry.annual_emission} (cumulative: ${entry.cumulative_emission})`);
+      console.log(`  Year ${i + 1}: ${String(entry.annual_emission)} (cumulative: ${String(entry.cumulative_emission)})`);
     });
   } catch (error) {
     console.log(`  Error: ${(error as Error).message}`);
@@ -80,10 +80,10 @@ async function main() {
     const info = await client.rest.miner.getLicenseMinerInfo(LICENSE_ID);
     console.log(`  VRF Pubkey: ${info.vrf_pubkey || 'not set'}`);
     console.log(`  Last submit epoch: ${info.last_submit_epoch}`);
-    console.log(`  Is eligible: ${info.is_eligible}`);
-    console.log(`  Is quarantined: ${info.is_quarantined}`);
-    console.log(`  Credits: ${info.credits}`);
-    console.log(`  Total payouts: ${info.total_payouts}`);
+    console.log(`  Is eligible: ${String(info.is_eligible)}`);
+    console.log(`  Is quarantined: ${String(info.is_quarantined)}`);
+    console.log(`  Credits: ${String(info.credits)}`);
+    console.log(`  Total payouts: ${String(info.total_payouts)}`);
   } catch (error) {
     console.log(`  Error: ${(error as Error).message}`);
   }
@@ -94,7 +94,7 @@ async function main() {
   try {
     const key = await client.rest.miner.getOwnerKey(OWNER_ADDRESS);
     console.log(`  VRF Pubkey: ${key.vrf_pubkey || 'not registered'}`);
-    console.log(`  Registered epoch: ${key.registered_epoch}`);
+    console.log(`  Registered epoch: ${String(key.registered_epoch)}`);
   } catch (error) {
     console.log(`  Error: ${(error as Error).message}`);
   }
@@ -110,7 +110,7 @@ async function main() {
       operators.operators.slice(0, 5).forEach((op, i) => {
         console.log(`  ${i + 1}. ${op.operator}`);
         console.log(`     Commission: ${op.commission_rate}`);
-        console.log(`     Recipient: ${op.recipient}`);
+        console.log(`     Recipient: ${String(op.recipient)}`);
       });
       if (operators.operators.length > 5) {
         console.log(`  ... and ${operators.operators.length - 5} more`);

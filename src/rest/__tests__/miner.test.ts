@@ -5,7 +5,7 @@ import {
   mockJsonResponse,
   mockErrorResponse,
   type MockFetch,
-} from "../../__tests__/helpers/mock-fetch";
+} from "./mock-fetch";
 import type { Operator, MiningDelegation, EpochInfo } from "../types";
 
 describe("MinerApi", () => {

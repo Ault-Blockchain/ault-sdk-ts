@@ -184,6 +184,48 @@ const orderBook = await client.exchange.getOrderBook(1);
 const orders = await client.exchange.getOrders({ orderer: client.address });
 ```
 
+## Parallel Query Helpers
+
+For analyzing large numbers of licenses efficiently, use the parallel query helpers:
+
+```typescript
+// Analyze all licenses for an owner in one call (parallel fetching)
+const analysis = await client.analyzeLicenses('ault1...');
+console.log(`Total: ${analysis.total}`);
+console.log(`Active: ${analysis.active}`);
+console.log(`Delegated: ${analysis.delegated}`);
+
+// Group delegations by operator
+const byOperator = new Map<string, number>();
+for (const d of analysis.delegations) {
+  byOperator.set(d.operator, (byOperator.get(d.operator) ?? 0) + 1);
+}
+```
+
+The `analyzeLicenses()` method fetches all data in parallel batches, making it much faster than sequential queries. For an address with 464 licenses, it completes in ~15-30 seconds instead of several minutes.
+
+### Individual Parallel Helpers
+
+For more control, use the individual parallel helpers:
+
+```typescript
+// Get all license IDs owned by an address (parallel batched)
+const licenseIds = await client.getAllLicenseIds('ault1...');
+
+// Get license details for multiple IDs in parallel
+const licenses = await client.getLicenseDetailsParallel(licenseIds);
+
+// Get delegation status for multiple IDs in parallel
+const delegations = await client.getLicenseDelegationsParallel(licenseIds);
+
+// Process results
+for (const d of delegations) {
+  if (d.isDelegated) {
+    console.log(`License ${d.licenseId} delegated to ${d.operator}`);
+  }
+}
+```
+
 ## Transaction Methods
 
 All transaction methods return a `TxResult`:

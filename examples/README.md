@@ -16,10 +16,8 @@ pnpm build
 All examples can be run with `tsx`:
 
 ```bash
-# Install tsx if you haven't
-pnpm add -D tsx
-
 # Run examples
+npx tsx examples/high-level/analyze-licenses.ts
 npx tsx examples/low-level/query-licenses.ts
 npx tsx examples/high-level/complete-workflow.ts
 ```
@@ -30,12 +28,19 @@ For transaction examples, set your private key:
 PRIVATE_KEY=your_private_key npx tsx examples/high-level/delegate-mining.ts
 ```
 
+For license analysis with a custom address:
+
+```bash
+ADDRESS=ault1youraddress... npx tsx examples/high-level/analyze-licenses.ts
+```
+
 ## High-Level Client Examples (Recommended)
 
 These examples use the new `createClient()` high-level API which is simpler and handles all the complexity internally:
 
 | Example | Description |
 |---------|-------------|
+| `high-level/analyze-licenses.ts` | **NEW** Parallel license analysis - get total, active, and delegated counts efficiently |
 | `high-level/delegate-mining.ts` | Delegate mining licenses with simple API calls |
 | `high-level/exchange-orders.ts` | Place orders with protobuf Duration lifespan |
 | `high-level/complete-workflow.ts` | Complete API reference showing all operations |
@@ -47,6 +52,7 @@ These examples use the new `createClient()` high-level API which is simpler and 
 - EVM addresses auto-converted to ault1 format
 - Lifespan uses protobuf Duration (seconds + nanos)
 - `result.success` boolean for easy checking
+- Parallel query helpers for bulk operations
 
 ## Query Examples (Read-Only)
 
@@ -68,6 +74,32 @@ These examples show the low-level API with manual message building:
 | `low-level/place-exchange-order.ts` | Low-level exchange orders with manual nanosecond conversion |
 
 **Note:** For most use cases, prefer the high-level examples above.
+
+## Parallel License Analysis
+
+The SDK includes parallel query helpers for efficiently analyzing large numbers of licenses. For an address with 464 licenses, analysis completes in ~15-30 seconds instead of several minutes:
+
+```typescript
+// Analyze all licenses in parallel
+const analysis = await client.analyzeLicenses('ault1...');
+
+console.log(`Total owned: ${analysis.total}`);
+console.log(`Active: ${analysis.active}`);
+console.log(`Delegated: ${analysis.delegated}`);
+
+// Delegations include operator details
+for (const d of analysis.delegations) {
+  console.log(`License ${d.licenseId} -> ${d.operator}`);
+}
+```
+
+Run the example:
+```bash
+npx tsx examples/high-level/analyze-licenses.ts
+
+# Or with a custom address:
+ADDRESS=ault1youraddress... npx tsx examples/high-level/analyze-licenses.ts
+```
 
 ## Quick Comparison
 

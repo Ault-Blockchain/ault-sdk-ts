@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { toBech32 } from "@cosmjs/encoding";
-import { createClient } from "../high-level-client";
-import { getNetworkConfig } from "../core/network";
-import { signAndBroadcastEip712 } from "../eip712/sign-and-broadcast";
+import { createClient } from "../../high-level-client";
+import { getNetworkConfig } from "../../core/network";
+import { signAndBroadcastEip712 } from "../../eip712/sign-and-broadcast";
 
-vi.mock("../eip712/sign-and-broadcast", () => ({
+vi.mock("../../eip712/sign-and-broadcast", () => ({
   signAndBroadcastEip712: vi.fn(),
 }));
 

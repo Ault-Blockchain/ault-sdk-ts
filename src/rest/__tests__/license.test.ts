@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createLicenseApi, type LicenseApi } from "../license";
-import { createMockFetch, mockJsonResponse, type MockFetch } from "../../__tests__/helpers/mock-fetch";
+import { createMockFetch, mockJsonResponse, type MockFetch } from "./mock-fetch";
 import type { License } from "../types";
 
 describe("LicenseApi", () => {
