@@ -114,6 +114,19 @@ describe("ExchangeApi", () => {
 
       expect(result.markets).toEqual([]);
     });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ markets: [sampleMarket], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createExchangeApi(context);
+
+      const result = await api.getMarkets();
+
+      expect(result.markets).toEqual([sampleMarket]);
+      expect(result.pagination?.next_key).toBeUndefined();
+    });
   });
 
   describe("getMarket", () => {
@@ -197,6 +210,19 @@ describe("ExchangeApi", () => {
       expect(url).toContain("market_id=1");
       expect(url).toContain("pagination.key=xyz");
       expect(url).toContain("pagination.limit=50");
+    });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ orders: [sampleOrder], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createExchangeApi(context);
+
+      const result = await api.getOrders();
+
+      expect(result.orders).toEqual([sampleOrder]);
+      expect(result.pagination?.next_key).toBeUndefined();
     });
   });
 

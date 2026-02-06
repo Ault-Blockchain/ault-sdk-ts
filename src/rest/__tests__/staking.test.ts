@@ -121,6 +121,19 @@ describe("StakingApi", () => {
     expect(url).toContain("pagination.limit=20");
   });
 
+  it("accepts null pagination.next_key", async () => {
+    mockFetch = createMockFetch(
+      mockJsonResponse({ validators: [sampleValidator], pagination: { next_key: null, total: "1" } }),
+    );
+    context.fetchFn = mockFetch;
+    api = createStakingApi(context);
+
+    const result = await api.getValidators();
+
+    expect(result.validators).toHaveLength(1);
+    expect(result.pagination?.next_key).toBeUndefined();
+  });
+
   it("adds validator status to the query string", async () => {
     mockFetch = createMockFetch(mockJsonResponse({ validators: [] }));
     context.fetchFn = mockFetch;
@@ -180,6 +193,22 @@ describe("StakingApi", () => {
     );
   });
 
+  it("accepts null pagination.next_key for delegations", async () => {
+    mockFetch = createMockFetch(
+      mockJsonResponse({
+        delegation_responses: [sampleDelegation],
+        pagination: { next_key: null, total: "1" },
+      }),
+    );
+    context.fetchFn = mockFetch;
+    api = createStakingApi(context);
+
+    const result = await api.getDelegations("ault1delegator");
+
+    expect(result.delegation_responses).toHaveLength(1);
+    expect(result.pagination?.next_key).toBeUndefined();
+  });
+
   it("fetches unbonding delegations with dot-notation pagination", async () => {
     mockFetch = createMockFetch(
       mockJsonResponse({ unbonding_responses: [sampleUnbonding], pagination: { next_key: "next" } }),
@@ -196,6 +225,22 @@ describe("StakingApi", () => {
     expect(url).toBe(
       "https://api.example.com/cosmos/staking/v1beta1/delegators/ault1delegator/unbonding_delegations?pagination.key=next",
     );
+  });
+
+  it("accepts null pagination.next_key for unbonding delegations", async () => {
+    mockFetch = createMockFetch(
+      mockJsonResponse({
+        unbonding_responses: [sampleUnbonding],
+        pagination: { next_key: null, total: "1" },
+      }),
+    );
+    context.fetchFn = mockFetch;
+    api = createStakingApi(context);
+
+    const result = await api.getUnbondingDelegations("ault1delegator");
+
+    expect(result.unbonding_responses).toHaveLength(1);
+    expect(result.pagination?.next_key).toBeUndefined();
   });
 
   it("fetches staking rewards", async () => {

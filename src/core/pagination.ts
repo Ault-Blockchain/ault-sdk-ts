@@ -1,4 +1,5 @@
 import { fetchJson, type FetchWithRetryOptions, type FetchFn } from "./http";
+import { ApiError } from "./errors";
 
 export interface PaginateAllOptions<TResponse, TItem, TCursor> {
   buildUrl: (cursor: TCursor | null) => string;
@@ -15,6 +16,7 @@ export async function paginateAll<TResponse, TItem, TCursor>(
 ): Promise<{ items: TItem[]; total: number }> {
   const allItems: TItem[] = [];
   let cursor: TCursor | null = null;
+  const seenCursors = new Set<TCursor>();
   let total = 0;
   let isFirstPage = true;
 
@@ -38,6 +40,13 @@ export async function paginateAll<TResponse, TItem, TCursor>(
       break;
     }
 
+    if (nextCursor === cursor || seenCursors.has(nextCursor)) {
+      throw new ApiError(
+        `Pagination cursor repeated while fetching ${url}; aborting to prevent infinite loop`,
+      );
+    }
+
+    seenCursors.add(nextCursor);
     cursor = nextCursor;
   }
 

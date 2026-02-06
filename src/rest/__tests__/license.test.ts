@@ -108,6 +108,19 @@ describe("LicenseApi", () => {
       expect(url).toContain("status=LICENSE_STATUS_ACTIVE");
       expect(url).not.toContain("pagination.limit=");
     });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ licenses: [sampleLicense], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      const result = await api.getLicenses();
+
+      expect(result.licenses).toEqual([sampleLicense]);
+      expect(result.pagination?.next_key).toBeUndefined();
+    });
   });
 
   describe("getLicensesByOwner", () => {
@@ -144,6 +157,19 @@ describe("LicenseApi", () => {
       const url = mockFetch.mock.calls[0][0];
       expect(url).toContain("pagination.limit=25");
       expect(url).toContain("pagination.key=xyz");
+    });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ licenses: [sampleLicense], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      const result = await api.getLicensesByOwner("ault1owner");
+
+      expect(result.licenses).toEqual([sampleLicense]);
+      expect(result.pagination?.next_key).toBeUndefined();
     });
   });
 
@@ -224,6 +250,19 @@ describe("LicenseApi", () => {
       expect(url).toContain("pagination.limit=50");
       expect(url).toContain("pagination.key=abc");
     });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ license_ids: ["1"], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      const result = await api.getOwnedBy("ault1owner");
+
+      expect(result.license_ids).toEqual(["1"]);
+      expect(result.pagination?.next_key).toBeUndefined();
+    });
   });
 
   describe("getLicensesByOwnerAll", () => {
@@ -254,6 +293,33 @@ describe("LicenseApi", () => {
 
       expect(result.license_ids).toEqual([]);
       expect(result.total).toBe(0);
+    });
+
+    it("throws when pagination cursor repeats", async () => {
+      mockFetch = createMockFetch([
+        mockJsonResponse({ license_ids: ["1"], pagination: { next_key: "abc" } }),
+        mockJsonResponse({ license_ids: ["2"], pagination: { next_key: "abc" } }),
+        mockJsonResponse({ license_ids: ["3"], pagination: { next_key: "" } }),
+      ]);
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      await expect(api.getLicensesByOwnerAll("ault1owner")).rejects.toThrow("Pagination cursor repeated");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats null next_key as final page", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ license_ids: ["1", "2"], pagination: { next_key: null, total: "2" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      const result = await api.getLicensesByOwnerAll("ault1owner");
+
+      expect(result.license_ids).toEqual(["1", "2"]);
+      expect(result.total).toBe(2);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -329,6 +395,19 @@ describe("LicenseApi", () => {
       expect(url).toContain("pagination.key=abc");
       expect(url).toContain("pagination.limit=10");
     });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ minters: ["ault1m1"], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      const result = await api.getMinters();
+
+      expect(result.minters).toEqual(["ault1m1"]);
+      expect(result.pagination?.next_key).toBeUndefined();
+    });
   });
 
   describe("getTransferUnlockTime", () => {
@@ -353,6 +432,19 @@ describe("LicenseApi", () => {
 
       expect(result.approvers).toEqual(["ault1kyc1"]);
     });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ approvers: ["ault1kyc1"], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      const result = await api.getKycApprovers();
+
+      expect(result.approvers).toEqual(["ault1kyc1"]);
+      expect(result.pagination?.next_key).toBeUndefined();
+    });
   });
 
   describe("getApprovedMembers", () => {
@@ -366,6 +458,19 @@ describe("LicenseApi", () => {
       const result = await api.getApprovedMembers();
 
       expect(result.members).toEqual(["ault1member1"]);
+    });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ members: ["ault1member1"], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createLicenseApi(context);
+
+      const result = await api.getApprovedMembers();
+
+      expect(result.members).toEqual(["ault1member1"]);
+      expect(result.pagination?.next_key).toBeUndefined();
     });
   });
 

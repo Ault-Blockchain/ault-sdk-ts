@@ -269,6 +269,19 @@ describe("MinerApi", () => {
       expect(url).toContain("pagination.limit=10");
       expect(url).toContain("pagination.reverse=true");
     });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ epochs: [sampleEpoch], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createMinerApi(context);
+
+      const result = await api.getEpochs();
+
+      expect(result.epochs).toEqual([sampleEpoch]);
+      expect(result.pagination?.next_key).toBeUndefined();
+    });
   });
 
   describe("getEpochsAll", () => {
@@ -313,6 +326,36 @@ describe("MinerApi", () => {
       const result = await api.getEpochsAll();
 
       expect(result.epochs).toHaveLength(1);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("throws when pagination cursor repeats", async () => {
+      const epoch1 = { ...sampleEpoch, epoch: "1" };
+      const epoch2 = { ...sampleEpoch, epoch: "2" };
+
+      mockFetch = createMockFetch([
+        mockJsonResponse({ epochs: [epoch1], pagination: { next_key: "abc" } }),
+        mockJsonResponse({ epochs: [epoch2], pagination: { next_key: "abc" } }),
+        mockJsonResponse({ epochs: [sampleEpoch], pagination: { next_key: "" } }),
+      ]);
+      context.fetchFn = mockFetch;
+      api = createMinerApi(context);
+
+      await expect(api.getEpochsAll()).rejects.toThrow("Pagination cursor repeated");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("treats null next_key as final page", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ epochs: [sampleEpoch], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createMinerApi(context);
+
+      const result = await api.getEpochsAll();
+
+      expect(result.epochs).toEqual([sampleEpoch]);
+      expect(result.total).toBe(1);
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
@@ -363,6 +406,19 @@ describe("MinerApi", () => {
       expect(result.operators).toHaveLength(1);
       expect(result.operators[0]).toEqual(sampleOperator);
       expect(mockFetch.mock.calls[0][0]).toBe("https://api.example.com/cosmos/miner/v1/operators");
+    });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ operators: [sampleOperator], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createMinerApi(context);
+
+      const result = await api.getOperators();
+
+      expect(result.operators).toEqual([sampleOperator]);
+      expect(result.pagination?.next_key).toBeUndefined();
     });
   });
 
@@ -418,6 +474,19 @@ describe("MinerApi", () => {
       expect(mockFetch.mock.calls[0][0]).toBe(
         "https://api.example.com/cosmos/miner/v1/operator/ault1operator/licenses",
       );
+    });
+
+    it("accepts null pagination.next_key", async () => {
+      mockFetch = createMockFetch(
+        mockJsonResponse({ license_ids: ["1"], pagination: { next_key: null, total: "1" } }),
+      );
+      context.fetchFn = mockFetch;
+      api = createMinerApi(context);
+
+      const result = await api.getDelegatedLicenses("ault1operator");
+
+      expect(result.license_ids).toEqual(["1"]);
+      expect(result.pagination?.next_key).toBeUndefined();
     });
   });
 

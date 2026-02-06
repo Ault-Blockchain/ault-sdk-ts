@@ -8,6 +8,7 @@ import type {
   StakingParams,
   StakingPool,
   ValidatorStatus,
+  PageResponse,
 } from "./types";
 import {
   ValidatorsResponseSchema,
@@ -27,7 +28,7 @@ export interface StakingApi {
     pagination_limit?: number;
     "pagination.key"?: string;
     "pagination.limit"?: number;
-  }) => Promise<{ validators: Validator[]; pagination?: { next_key?: string; total?: string } }>;
+  }) => Promise<{ validators: Validator[]; pagination?: PageResponse }>;
 
   getValidator: (validatorAddress: string) => Promise<{ validator: Validator }>;
 
@@ -41,7 +42,7 @@ export interface StakingApi {
     },
   ) => Promise<{
     delegation_responses: DelegationResponse[];
-    pagination?: { next_key?: string; total?: string };
+    pagination?: PageResponse;
   }>;
 
   getUnbondingDelegations: (
@@ -54,7 +55,7 @@ export interface StakingApi {
     },
   ) => Promise<{
     unbonding_responses: UnbondingDelegation[];
-    pagination?: { next_key?: string; total?: string };
+    pagination?: PageResponse;
   }>;
 
   getStakingRewards: (delegatorAddress: string) => Promise<{
