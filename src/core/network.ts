@@ -18,6 +18,17 @@ export interface NetworkConfig {
 }
 
 export const NETWORKS: Record<string, NetworkConfig> = {
+  "ault_904-1": {
+    name: "Ault Mainnet",
+    type: "mainnet",
+    chainId: "ault_904-1",
+    evmChainId: 904,
+    rpcUrl: "https://mainnet-rpc-proxy.aultblockchain.xyz/cosmos-rpc",
+    restUrl: "https://mainnet-rpc-proxy.aultblockchain.xyz/rest",
+    evmRpcUrl: "https://mainnet-rpc-proxy.aultblockchain.xyz/evm",
+    explorerUrl: "https://ault.explorer.xangle.io/home",
+    isProduction: true,
+  },
   "ault_10904-1": {
     name: "Ault Testnet",
     type: "testnet",
@@ -60,7 +71,6 @@ export function getNetworkConfig(chainId: string = DEFAULT_CHAIN_ID): NetworkCon
     rpcUrl: "http://localhost:26657",
     restUrl: "http://localhost:1317",
     evmRpcUrl: "http://localhost:8545",
-    indexerUrl: "http://localhost:8080",
     isProduction: false,
   };
 }
