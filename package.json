@@ -1,6 +1,6 @@
 {
   "name": "ault-sdk-ts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "TypeScript SDK for the Ault blockchain with high-level transaction methods and REST query clients",
   "keywords": [
     "ault",
